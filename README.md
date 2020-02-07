@@ -1,7 +1,7 @@
 <p align="center">
 	<img src="https://user-images.githubusercontent.com/30529572/72455010-fb38d400-37e7-11ea-9c1e-8cdeb5f5906e.png" />
-	<h2 align="center"> < Insert Project Title Here > </h2>
-	<h4 align="center"> < Insert Project Description Here > <h4>
+	<h2 align="center">  Priority Message Bot  </h2>
+	<h4 align="center">  Identify and extract important events from chat messages and add them to calendar  <h4>
 </p>
 
 ---
@@ -10,10 +10,11 @@
 
 
 ## Functionalities
-- [ ]  < insert functionality >
-- [ ]  < insert functionality >
-- [ ]  < insert functionality >
-- [ ]  < insert functionality >
+- [ ]  Time Parser
+- [ ]  Date Parser
+- [ ]  Message Intent Classifier
+- [ ]  Location Parser
+- [ ]  Subject Extraction
 
 <br>
 
@@ -39,8 +40,8 @@
 
 ## Contributors
 
-* [ < INSERT NAME HERE > ](INSERT_PROFILE_URL_HERE)
-* [ < INSERT NAME HERE > ](INSERT_PROFILE_URL_HERE)
+* [ Raman ](https://github.com/ramaneswaran)
+
 
 
 
