@@ -1,6 +1,6 @@
 def identify(text):
     keywords = ['meeting', 'party']
-    for word in text:
-        if word in keywords:
+    for keyword in keywords:
+        if keyword in text:
             return True
     return False

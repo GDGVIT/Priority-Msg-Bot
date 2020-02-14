@@ -2,6 +2,7 @@ import telebot
 import time
 from utils.parser import extract_information
 from utils.detector import identify
+from utils.detector import shit
 
 
 class TeleBot():
