@@ -2,7 +2,6 @@ import telebot
 import time
 from utils.parser import extract_information
 from utils.detector import identify
-from utils.detector import shit
 
 
 class TeleBot():
@@ -15,8 +14,14 @@ class TeleBot():
             self.bot.reply_to(message, 'Welcome')
 
         @self.bot.message_handler(func = lambda message: identify(message.text))
-        def echo_all(message):
-            self.bot.reply_to(message, message.text)
+        def send_event_info(message):
+            event_info = extract_information(message.text)
+            reply_message = 'Event detected => '
+            for ent in event_info:
+                if event_info[ent]:
+                    reply_message+=ent+' : '+str(event_info[ent])+' ;'
+    
+            self.bot.reply_to(message, reply_message)
 
         while True:
             try:
