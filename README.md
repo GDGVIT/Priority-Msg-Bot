@@ -14,7 +14,6 @@
 - [ ]  Date Parser
 - [ ]  Message Intent Classifier
 - [ ]  Location Parser
-- [ ]  Subject Extraction
 
 <br>
 
@@ -22,18 +21,31 @@
 ## Instructions to run
 
 * Pre-requisites:
-	-  < insert pre-requisite >
-	-  < insert pre-requisite >
+	-  Python 3.5 or above
+	-  Dependencies in requirements.txt
 
-* < directions to install > 
+### Directions to install
+
+Clone the repository
+
+Create a virtual environement using venv module
 ```bash
-< insert code >
+python3 -m venv /path/to/new/virtual/environment
+source environment/bin/activate
+```
+cd into the directory where requirements.txt is located
+
+```bash
+pip install -r requirements.txt
 ```
 
-* < directions to execute >
+
+### Directions to execute 
+
+cd into the src folder
 
 ```bash
-< insert code >
+python3 main.py
 ```
 
 <br>
