@@ -13,13 +13,14 @@ class TeleBot():
         def send_welcome(message):
             self.bot.reply_to(message, 'Welcome')
 
-        @self.bot.message_handler(func = lambda message: identify(message.text))
+        @self.bot.message_handler(func = lambda message: identify(message.text)) #Identify event in message
         def send_event_info(message):
             event_info = extract_information(message.text)
             reply_message = 'Event detected => '
             for ent in event_info:
                 if event_info[ent]:
                     reply_message+=ent+' : '+str(event_info[ent])+' ;'
+            
     
             self.bot.reply_to(message, reply_message)
 
