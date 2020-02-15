@@ -24,8 +24,10 @@
 	-  Python 3.5 or above
 	-  Dependencies in requirements.txt
 
-* < directions to install >
+### Directions to install
+
 Clone the repository
+
 Create a virtual environement using venv module
 ```bash
 python3 -m venv /path/to/new/virtual/environment
@@ -38,9 +40,10 @@ pip install -r requirements.txt
 ```
 
 
-* < directions to execute >
+### Directions to execute 
 
 cd into the src folder
+
 ```bash
 python3 main.py
 ```
