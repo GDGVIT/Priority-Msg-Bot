@@ -17,6 +17,11 @@
 
 <br>
 
+### .env File Sample
+
+BOT_TOKEN = 'YOUR TELEGRAM BOT TOKEN'
+
+PARSER_URL = 'API ENDPOINT OF RASA SERVER'
 
 ## Instructions to run
 
