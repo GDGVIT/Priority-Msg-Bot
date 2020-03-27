@@ -1,7 +1,7 @@
 <p align="center">
 	<img src="https://user-images.githubusercontent.com/30529572/72455010-fb38d400-37e7-11ea-9c1e-8cdeb5f5906e.png" />
-	<h2 align="center"> < Insert Project Title Here > </h2>
-	<h4 align="center"> < Insert Project Description Here > <h4>
+	<h2 align="center"> Priority Message Bot </h2>
+	<h4 align="center"> Telegram bot to identify all important messages  <h4>
 </p>
 
 ---
@@ -10,13 +10,18 @@
 
 
 ## Functionalities
-- [ ]  < insert functionality >
-- [ ]  < insert functionality >
-- [ ]  < insert functionality >
-- [ ]  < insert functionality >
+- [ ]  Detect and track important messages
+- [ ]  List tracked messages on command
+- [ ]  Get feedback on the listed messages
+- [ ]  Collect additional details on important messages
 
 <br>
 
+### .env File Sample
+
+BOT_TOKEN = 'YOUR TELEGRAM BOT TOKEN'
+
+PARSER_URL = 'API ENDPOINT OF RASA SERVER'
 
 ## Instructions to run
 
@@ -39,8 +44,7 @@
 
 ## Contributors
 
-* [ < INSERT NAME HERE > ](INSERT_PROFILE_URL_HERE)
-* [ < INSERT NAME HERE > ](INSERT_PROFILE_URL_HERE)
+* [  Ramaneswaran ](https://github.com/ramaneswaran)
 
 
 
