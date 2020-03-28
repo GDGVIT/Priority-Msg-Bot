@@ -10,35 +10,88 @@
 
 
 ## Functionalities
-- [ ]  Detect and track important messages
-- [ ]  List tracked messages on command
-- [ ]  Get feedback on the listed messages
-- [ ]  Collect additional details on important messages
+- [X]  Detect and track important messages
+- [X]  List tracked messages on command
+- [X]  Get feedback on the listed messages
+- [X]  Collect additional details on important messages
 
 <br>
 
-### .env File Sample
+
+
+## Directions To install
+
+* Pre-requisites:
+	-  Python >= 3.5
+	-  Dependencies from requirements.txt for NLP backend and Telegram bot.
+
+There are two components that need to be installed and run
+
+1. The Rasa backend API which is used for NLP
+2. Python script for the Telegram bot
+
+Clone the repository
+Create a virtual environment and activate it
+
+```bash
+python3 -m venv env
+source env/bin/activate
+```
+
+Install requirements for Rasa API
+
+```bash
+cd src/backend
+pip install -r requirements.txt
+```
+
+Install dependencies for Telegram Bot API
+
+```bash
+cd src/bot
+pip install -r requirements.txt
+```
+
+## Instructions to execute
+
+### Directions to run
+
+Create a .env file and add your credentials\
+Refer to the .env file sample
+
+#### .env File sample
 
 BOT_TOKEN = 'YOUR TELEGRAM BOT TOKEN'
 
 PARSER_URL = 'API ENDPOINT OF RASA SERVER'
 
-## Instructions to run
 
-* Pre-requisites:
-	-  < insert pre-requisite >
-	-  < insert pre-requisite >
-
-* < directions to install > 
-```bash
-< insert code >
-```
-
-* < directions to execute >
+1. Run the Rasa API Server
 
 ```bash
-< insert code >
+cd src/backend
+rasa run --enable-api
 ```
+
+2. Run the Telegram bot script
+
+```bash
+cd src/bot
+python3 -m app.py
+```
+
+### Direction To Use
+
+Add the telegram bot to your group\
+Use the following commands to communicate with the bot
+
+1. /start
+
+This command activates the bot, now the bot will listen to all messages
+
+2. /show
+
+This command makes the bot list all important messages being tracked
 
 <br>
 
