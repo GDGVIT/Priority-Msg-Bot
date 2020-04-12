@@ -259,7 +259,7 @@ class TeleBot:
         while True:
             try:
                 cur = time.monotonic()
-                diff = cur-start 
+                diff = cur-self.start 
                 if diff>120:
                     self.mutex = False
                 self.bot.polling()
