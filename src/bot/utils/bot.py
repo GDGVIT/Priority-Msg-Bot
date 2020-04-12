@@ -3,6 +3,7 @@ import telebot
 import json
 import re
 import os
+import time
 import requests
 import psycopg2
 import logging
@@ -35,6 +36,9 @@ class TeleBot:
         # Rasa API endpoint
         self.parser_url = parser_url
         logging.info("URL parser set : {}".format(self.parser_url))
+
+        # Track time to avoid deadlock
+        self.start = time.monotonic()
         
         # Tracker list to store event notification 
         self.tracker = []
@@ -142,6 +146,9 @@ class TeleBot:
 
                 # Lock the mutex
                 self.mutex = True
+                
+                # Track time variable
+                self.start = time.monotonic()
 
                 # Clear state
                 self.clear_state()
@@ -251,6 +258,10 @@ class TeleBot:
           
         while True:
             try:
+                cur = time.monotonic()
+                diff = cur-start 
+                if diff>120:
+                    self.mutex = False
                 self.bot.polling()
             except Exception:
                 time.sleep(15)
