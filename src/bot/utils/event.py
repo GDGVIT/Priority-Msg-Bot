@@ -11,8 +11,9 @@ class Event:
         self.details = {
             #'name':None,
             'event_type':event_type,
+            'description':None,
             'date': None,
-            'time':None
+            'time':None,
         }
         
   

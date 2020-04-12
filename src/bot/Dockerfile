@@ -10,6 +10,7 @@ WORKDIR /app
 # Installing Dependencies
 COPY requirements.txt .
 RUN pip install pyTelegramBotAPI
+RUN pip install psycopg2-binary
 RUN pip install -r requirements.txt
 
 # Copying files
