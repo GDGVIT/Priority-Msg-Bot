@@ -63,12 +63,12 @@ class TeleBot:
 
         self.markup = self.gen_markup()
 
-        self.connection = self.get_connection()
+        #self.connection = self.get_connection()
 
-        if self.connection:
-            logging.info("Successfully connected to the database")
-        else:
-            logging.info("Failed to connect to the database")
+        # if self.connection:
+        #     logging.info("Successfully connected to the database")
+        # else:
+        #     logging.info("Failed to connect to the database")
 
         self.mutex = False
         
@@ -169,12 +169,17 @@ class TeleBot:
                 # Retrive records
                 select_query = "SELECT * FROM tracker where chat_id="+str(self.chat_id)+";"
 
+                connection = self.get_connection()
+
                 # Acquire cursor
-                cursor = self.connection.cursor()
+                cursor = connection.cursor()
                 
                 # Execute query
                 cursor.execute(select_query)
                 records = cursor.fetchall()
+
+                cursor.close()
+                connection.close()
                 
                 for row in records:
                     #Populate tracker list
@@ -184,6 +189,7 @@ class TeleBot:
 
                 self.item_ptr = 0
                 self.show_one_event()
+
             
             else:
                 self.bot.reply_to(message, 'Bot is currently busy, try again in a minute')
@@ -191,6 +197,8 @@ class TeleBot:
 
         @self.bot.message_handler(func = lambda message : True)
         def track_messages(message):
+
+            logging.info("Being replied to : {}".format(self.ent_req_id))
 
             if message.reply_to_message is None:
                 if self.is_event_notification(message.text):
@@ -201,8 +209,10 @@ class TeleBot:
                     #Incase event not found
                     if event_type is None:
                         event_type = 'some event'
+                    
+                    connection = self.get_connection()
 
-                    cursor = self.connection.cursor()
+                    cursor = connection.cursor()
                     
                     try:
                         if cursor:
@@ -217,10 +227,11 @@ class TeleBot:
                             cursor.execute(insert_query, record_to_insert)
 
                             #Commit the insert
-                            self.connection.commit()
+                            connection.commit()
 
                             #Close the cursor
                             cursor.close()
+                            connection.close()
                             logging.info("Cursor closed")
 
                         else:
@@ -229,7 +240,7 @@ class TeleBot:
                     except (Exception, psycopg2.Error) as error:
                             logging.info(error)                    
                     
-            logging.info("Being replied to : {}".format(self.ent_req_id))
+            
 
             elif message.reply_to_message.message_id == self.ent_req_id:
 
@@ -336,16 +347,19 @@ class TeleBot:
         # Clear tracked messages
         delete_query = "DELETE FROM tracker where chat_id="+str(self.chat_id)+";"
         
+        connection = self.get_connection()
+
         # Execute
-        cursor = self.connection.cursor()
+        cursor = sconnection.cursor()
         try:
             cursor.execute(delete_query)
         except (Exception, psycopg2.Error) as error:
             logging.info(error)
         
         # Commit changes
-        self.connection.commit()
+        connection.commit()
         cursor.close()
+        connection.close()
 
         logging.info("Cleared tracked messages")
 
@@ -384,7 +398,9 @@ class TeleBot:
                 question+='\n '+'*'+event_key+'*'+' : '+event_details[event_key]
             question+='\n Stored sucessfully!'
 
-            cursor = self.connection.cursor()
+            
+            connection = self.get_connection()
+            cursor = connection.cursor()
 
             try:
                 
@@ -401,7 +417,7 @@ class TeleBot:
                     cursor.execute(insert_query, record_to_insert)
 
                     # Commit
-                    self.connection.commit()
+                    connection.commit()
 
                 else: 
                     raise Exception("Cursor could not be opened")
@@ -412,6 +428,7 @@ class TeleBot:
             finally:
                 # Close the cursor
                 cursor.close()
+                connection.close()
                 logging.info("Cursor closed")
         
 
