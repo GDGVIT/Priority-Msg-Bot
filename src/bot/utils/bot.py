@@ -324,6 +324,9 @@ class TeleBot:
             for row in records:
                 text = row[2] + " on *"+row[4]+"* at *"+row[5]+"*\n"+"_"+row[3]+"_"
                 self.bot.send_message(self.chat_id,text,parse_mode="Markdown")
+            
+            self.mutex = False
+            
         except Exception as error:
             logging.info(error)
 
