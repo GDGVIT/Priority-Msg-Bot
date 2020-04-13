@@ -481,14 +481,15 @@ class TeleBot:
             # sent_message = self.bot.send_message(self.chat_id, text,
             #             reply_markup=markup, parse_mode="Markdown")
 
-            self.bot.send_message(self.chat_id, text,reply_markup=self.markup)
+            self.bot.send_message(self.chat_id, text,reply_markup=self.markup, parse_mode="Markdown")
 
             # Tracking feedback request ID
 
-            self.fb_req_id = sent_message.message_id
+            #self.fb_req_id = sent_message.message_id
 
         else:
             self.bot.send_message(self.chat_id, 'No important messages were detected')
+            self.mutex = False
 
 
 
