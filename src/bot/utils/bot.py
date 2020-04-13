@@ -206,7 +206,14 @@ class TeleBot:
 
         @self.bot.message_handler(func = lambda message : True)
         def track_messages(message):
+            
+            # Checking rasa server health
 
+            resp = requests.get(self.parser_url[:-11])
+            logging.info(resp.status_code)
+            if resp.status_code != 200:
+                self.bot.send_message(message.chat.id, "Argh,Server overloaded!! brb in 2 mins")
+                time.sleep(120)
 
             if message.reply_to_message is None:
                 if self.is_event_notification(message.text):
@@ -326,7 +333,7 @@ class TeleBot:
                 self.bot.send_message(self.chat_id,text,parse_mode="Markdown")
             
             self.mutex = False
-            
+
         except Exception as error:
             logging.info(error)
 
