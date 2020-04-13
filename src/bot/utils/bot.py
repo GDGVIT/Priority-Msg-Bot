@@ -122,6 +122,7 @@ class TeleBot:
             None
             '''
 
+
             self.chat_id = message.chat.id
 
             # logging.info("Long polling unread messages")
@@ -140,6 +141,15 @@ class TeleBot:
                     
             #         item = self.get_tracker_item(text, event_type)
             #         self.tracker.append(item)
+
+            # Debugging mutex status
+            self.mutex_status()
+
+            # Overcome race condition
+            cur = time.monotonic()
+
+            if cur - self.start > 120:
+                self.mutex = False
 
             if self.mutex is False:
                 logging.info("Showing messages")
@@ -219,10 +229,13 @@ class TeleBot:
                     except (Exception, psycopg2.Error) as error:
                             logging.info(error)                    
                     
-            
+            logging.info("Being replied to : {}".format(self.ent_req_id))
+
             elif message.reply_to_message.message_id == self.ent_req_id:
 
                 logging.info("Form action in progress")
+
+                
 
                 #Make request to backend
                 body = json.dumps({'text': message.text})
@@ -258,13 +271,15 @@ class TeleBot:
           
         while True:
             try:
-                cur = time.monotonic()
-                diff = cur-self.start 
-                if diff>120:
-                    self.mutex = False
                 self.bot.polling()
             except Exception:
                 time.sleep(15)
+    
+    def mutex_status(self):
+        if self.mutex:
+            logging.info("CS Locked")
+        else:
+            logging.info("CS Open")
 
     def get_connection(self):
 
