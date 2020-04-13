@@ -7,7 +7,7 @@
 ---
 [![DOCS](https://img.shields.io/badge/Documentation-see%20docs-green?style=flat-square&logo=appveyor)](INSERT_LINK_FOR_DOCS_HERE) 
   [![UI ](https://img.shields.io/badge/User%20Interface-Link%20to%20UI-orange?style=flat-square&logo=appveyor)](INSERT_UI_LINK_HERE)
-
+  
 
 ## Functionalities
 - [X]  Detect and track important messages
@@ -57,7 +57,7 @@ If you don't have Docker or want to tinker around with the code \
 You can run them from Python virtual environments. \
 Refer to the intructions below to install dependencies and run the application
 
-## Directions To install dependencies
+## Directions To Install Dependencies
 
 * Pre-requisites:
 	-  Python >= 3.5
@@ -90,7 +90,7 @@ cd src/bot
 pip install -r requirements.txt
 ```
 
-## Instructions to run the application
+## Instructions To Run The Application
 
 
 ### 1. Setting up and running Rasa API
@@ -117,7 +117,7 @@ cd src/backend
 rasa run --enable-api
 ```
 
-### 2. Setting up and running telegram bot
+### 2. Setting Up And Running Telegram Bot
 
 Create a .env file in bot folder and add your credentials\
 Refer to the .env file sample
@@ -135,7 +135,7 @@ cd src/bot
 python3 -m app.py
 ```
 
-## Direction To Use
+## Directions To Use
 
 Add the telegram bot to your group\
 It is necessary to make the bot admin of the group.
@@ -151,7 +151,7 @@ This command makes the  bot list all the important messages that are being store
 
 <br>
 
-## Screenshot of the bot
+## Screenshots of the bot
 
 ### The /show command
 
