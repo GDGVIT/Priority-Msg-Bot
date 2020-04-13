@@ -263,14 +263,15 @@ class TeleBot:
 
                 response = response.json()
 
-                if len(response['entities']) > 0:
+                if self.event_key == 'description':
+                    self.event.add_event_detail('description', message.text)
+                
+                elif len(response['entities']) > 0:
                     for event in response['entities']:
 
                         #Validate the value later
                         self.event.add_event_detail(event['entity'], event['value'])
                 
-                elif self.event_key == 'description':
-                    self.event.add_event_detail('description', message.text)
                 
                 question = self.entity_to_request()
 
@@ -317,11 +318,16 @@ class TeleBot:
 
             records = cursor.fetchall()
             
+            if len(records) == 0:
+                self.bot.send_message(self.chat_id, "There were no stored messages")
+            
             for row in records:
                 text = row[2] + " on *"+row[4]+"* at *"+row[5]+"*\n"+"_"+row[3]+"_"
                 self.bot.send_message(self.chat_id,text,parse_mode="Markdown")
         except Exception as error:
             logging.info(error)
+
+
     def mutex_status(self):
         if self.mutex:
             logging.info("CS Locked")
