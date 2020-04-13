@@ -99,19 +99,19 @@ This command makes the bot list all important messages being tracked
 
 ### The /start command and the /show command
 
-<img src="https://raw.githubusercontent.com/ramaneswaran/Priority-Msg-Bot/master/images/1.png" />
+<img src="images/1.png" />
 
 
 
 ### The tracked events can be stored by taking additional information
 
-<img src="https://raw.githubusercontent.com/ramaneswaran/Priority-Msg-Bot/master/images/2.png" />
+<img src="images/2.png" />
 
 
 
 ### Or the tracked messages can be ignored
 
-<img src="https://raw.githubusercontent.com/ramaneswaran/Priority-Msg-Bot/master/images/3.png" />
+<img src="images/3.png" />
 
 
 
