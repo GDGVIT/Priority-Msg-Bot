@@ -268,6 +268,12 @@ class TeleBot:
 
                 sent_message = self.bot.send_message(self.chat_id, question, parse_mode="Markdown")
 
+                if self.event.is_details_complete() :
+                    try:
+                        self.bot.pin_chat_message(self.chat_id, sent_message.message_id)
+                    except Exception as error:
+                        logging.info(error)
+
                 self.ent_req_id = sent_message.message_id
 
 
