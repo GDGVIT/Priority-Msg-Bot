@@ -356,7 +356,7 @@ class TeleBot:
         connection = self.get_connection()
 
         # Execute
-        cursor = sconnection.cursor()
+        cursor = connection.cursor()
         try:
             cursor.execute(delete_query)
         except (Exception, psycopg2.Error) as error:
