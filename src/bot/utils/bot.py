@@ -110,6 +110,12 @@ class TeleBot:
             
             self.bot.reply_to(message, 'Bot is active and listening')
         
+        @self.bot.message_handler(commands=['remind'])
+        def send_reminder(message):
+            self.chat_id = message.chat.id
+            logging.info("Sending stored messages")
+            self.get_stored_messages()
+        
         @self.bot.message_handler(commands=['show'])
         def show_all_events(message):
             '''
@@ -153,6 +159,9 @@ class TeleBot:
 
             if self.mutex is False:
                 logging.info("Showing messages")
+
+                # Send a message to user
+                self.bot.send_message(self.chat_id, "Brb with your tracked messages!")
 
                 # Lock the mutex
                 self.mutex = True
@@ -198,7 +207,6 @@ class TeleBot:
         @self.bot.message_handler(func = lambda message : True)
         def track_messages(message):
 
-            logging.info("Being replied to : {}".format(self.ent_req_id))
 
             if message.reply_to_message is None:
                 if self.is_event_notification(message.text):
@@ -291,7 +299,29 @@ class TeleBot:
                 self.bot.polling()
             except Exception:
                 time.sleep(15)
-    
+
+    def get_stored_messages(self):
+        '''
+        This function retrieves stored messages
+        '''
+        self.mutex = True
+        self.bot.send_message(self.chat_id, "Brb with you stored messages!")
+        
+        try:
+            connection = self.get_connection()
+            cursor = connection.cursor()
+
+            select_query = "SELECT * FROM events WHERE chat_id="+str(self.chat_id)
+            
+            cursor.execute(select_query)
+
+            records = cursor.fetchall()
+            
+            for row in records:
+                text = row[2] + " on *"+row[4]+"* at *"+row[5]+"*\n"+"_"+row[3]+"_"
+                self.bot.send_message(self.chat_id,text,parse_mode="Markdown")
+        except Exception as error:
+            logging.info(error)
     def mutex_status(self):
         if self.mutex:
             logging.info("CS Locked")
@@ -528,8 +558,11 @@ class TeleBot:
         response = requests.post(self.parser_url, body)
         response = response.json()
 
-        if response['intent']['name'] == 'event_notification':
+        cond1 = float(response['intent']['confidence']) >= 0.5
+        cond2 = response['intent']['name'] == 'event_notification'
+        if cond1 and cond2:
             return True
+            
         
         return False
     
