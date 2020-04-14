@@ -13,4 +13,4 @@ ENTRYPOINT []
 
 EXPOSE 5005
 
-CMD $(echo "rasa run -p $PORT --debug --enable-api" | sed 's/=//')
+CMD $(echo "rasa run -p $PORT --debug -m models --credentials credentials.yml --enable-api --log-file out.log --endpoints endpoints.yml" | sed 's/=//')
