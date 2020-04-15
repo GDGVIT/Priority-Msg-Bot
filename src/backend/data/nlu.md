@@ -109,6 +109,9 @@
 - [digital assignment](event) 
 - i think we have a [digital assignment](event) next month
 - there is definitely a [digital assignment](event) coming up
+- remind me about this [assignment](event)
+- remind me about this [project](event)
+- hey, remind me about this [thing](event)
 
 ## intent:inform_event
 - its a [meeting](event)
