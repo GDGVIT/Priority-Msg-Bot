@@ -313,6 +313,10 @@ class TeleBot:
     def get_stored_messages(self):
         '''
         This function retrieves stored messages
+        Parameters:
+        None
+        Return:
+        None
         '''
         self.mutex = True
         self.bot.send_message(self.chat_id, "Brb with you stored messages!")
@@ -363,6 +367,10 @@ class TeleBot:
     def process_feedback(self,positive):
         '''
         This function processes feedback given for events
+        Parameter:
+        positive (bool) : The feedback given by user
+        Return:
+        None
         '''
 
         logging.info("Processing feedback")
@@ -394,7 +402,11 @@ class TeleBot:
 
     def release_bot(self):
         '''
-        This function sends the last message that tracker is empty
+        This function sends the last message after tracker is emptied
+        Parameters:
+        None
+        Return:
+        None
         '''
         # Clear the tracker
         self.tracker = []
@@ -423,6 +435,13 @@ class TeleBot:
         self.bot.send_message(self.chat_id, 'You are all caught up :)')
 
     def gen_markup(self):
+        '''
+        This function generates markup for inline keyboard
+        Parameters:
+        None
+        Return:
+        None
+        '''
         logging.info("Markup being generated")
         markup = types.InlineKeyboardMarkup()
         markup.row_width = 2
@@ -492,6 +511,10 @@ class TeleBot:
     def clear_state(self):
         '''
         This function clears the state of bot
+        Parameters:
+        None
+        Return:
+        None
         '''
 
         print("State being wiped")
@@ -577,7 +600,7 @@ class TeleBot:
         response = requests.post(self.parser_url, body)
         response = response.json()
 
-        cond1 = float(response['intent']['confidence']) >= 0.5
+        cond1 = float(response['intent']['confidence']) >= 0.8
         cond2 = response['intent']['name'] == 'event_notification'
         if cond1 and cond2:
             return True
