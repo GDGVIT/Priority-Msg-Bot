@@ -194,6 +194,7 @@ class TeleBot:
                     #Populate tracker list
 
                     item = self.get_tracker_item(row)
+                    #Decrypt message here
                     self.tracker.append(item)
 
                 self.item_ptr = 0
@@ -237,6 +238,7 @@ class TeleBot:
 
                             # Insert the message into postgres
                             insert_query = """INSERT INTO tracker (chat_id, message, event_type) VALUES (%s,%s, %s);"""
+                            # Encrypt here
                             record_to_insert = (message.chat.id, message.text, event_type)
 
                             cursor.execute(insert_query, record_to_insert)
@@ -329,6 +331,7 @@ class TeleBot:
                 self.bot.send_message(self.chat_id, "There were no stored messages")
             
             for row in records:
+                # Decrypt messages here
                 text = row[2] + " on *"+row[4]+"* at *"+row[5]+"*\n"+"_"+row[3]+"_"
                 self.bot.send_message(self.chat_id,text,parse_mode="Markdown")
             
@@ -461,7 +464,7 @@ class TeleBot:
                 
                     # Storing the event to database
                     insert_query = """INSERT INTO events (chat_id, type, description, date, time) VALUES (%s, %s, %s, %s, %s);"""
-
+                    # Encrypt messages
                     record_to_insert = tuple([event_details[key] for key in event_details])
                     record_to_insert = (self.chat_id, )+record_to_insert
 
