@@ -65,6 +65,11 @@ class TeleBot:
             elif call.data == "cb_no":
                 #self.bot.answer_callback_query(call.id, "Answer is No")
                 self.process_feedback(call.message.chat.id, False)
+            elif call.data == "edit":
+                logging.info("Edit")
+            
+            elif call.data == "store":
+                logging.info("Store")
 
         @self.bot.message_handler(commands=['start'])
         def send_welcome(message):
@@ -280,47 +285,58 @@ class TeleBot:
         event = self.bricks[chat_id]['event']
 
         if event.is_details_complete():
-            # If details have been collected
-            # move on to next message
 
-            # but before that
-            # store the event
-
-            # Get event details
+            # Get event details 
             event_details = event.get_event_details()
             
-            try:
-                connection = self.get_connection()
-                cursor = connection.cursor()
+            # It is necessary to ask user
+            # for correctness of data
+            if event.are_details_valid():
 
-                # Storing the event to database
-                insert_query = """INSERT INTO events (chat_id, type, description, date, time) VALUES (%s, %s, %s, %s, %s);"""
-
-                record_to_insert = tuple([event_details[key] for key in event_details])
-                record_to_insert = (chat_id, )+record_to_insert
-
-                cursor.execute(insert_query, record_to_insert)
-
-                # Commit
-                connection.commit()
-
-                cursor.close()
-                connection.close()
                 
+                try:
+                    connection = self.get_connection()
+                    cursor = connection.cursor()
 
-            except (Exception,psycopg2.Error) as error:
-                logging.info(error)
+                    # Storing the event to database
+                    insert_query = """INSERT INTO events (chat_id, type, description, date, time) VALUES (%s, %s, %s, %s, %s);"""
 
-            # Send confirmation to user
-            text = 'The details are \n'
-            for event_key in event_details:
-                text+='\n '+'*'+event_key+'*'+' : '+event_details[event_key]
-            text+='\n Stored sucessfully!'
+                    record_to_insert = tuple([event_details[key] for key in event_details])
+                    record_to_insert = (chat_id, )+record_to_insert
 
-            self.bot.send_message(chat_id, text, parse_mode='Markdown')
+                    cursor.execute(insert_query, record_to_insert)
 
-            # Finally move onto next element
-            self.send_tracked_message(chat_id)
+                    # Commit
+                    connection.commit()
+
+                    cursor.close()
+                    connection.close()
+                    
+
+                except (Exception,psycopg2.Error) as error:
+                    logging.info(error)
+
+                # # Send confirmation to user
+                # text = 'The details are \n'
+                # for event_key in event_details:
+                #     text+='\n '+'*'+event_key+'*'+' : '+event_details[event_key]
+                # text+='\n Stored sucessfully!'
+                text = "Event stored sucessully"
+                self.bot.send_message(chat_id, text, parse_mode='Markdown')
+
+                # Finally move onto next element
+                self.send_tracked_message(chat_id)
+
+            else:
+                # Ask user if he want to make any changes to the data
+                text = 'The details are \n'
+                for event_key in event_details:
+                    text+='\n '+'*'+event_key+'*'+' : '+event_details[event_key]
+                
+                markup = self.correctness_markup()
+
+                self.bot.send_message(chat_id, text, reply_markup=markup, 
+                        parse_mode="Markdown")
 
         else:
             # Else query additional details
@@ -490,6 +506,24 @@ class TeleBot:
         
         return markup
 
+    def correctness_markup(self):
+        '''
+        This function generates markup for inline keyboard
+        Parameters:
+        None
+        Return:
+        None
+        '''
+        
+        logging.info("Markup being generated")
+        
+        markup = types.InlineKeyboardMarkup()
+        markup.row_width = 1
+        markup.add(types.InlineKeyboardButton("Edit some details", callback_data="edit"),
+                    types.InlineKeyboardButton("Store the event", callback_data="store"))
+        
+        return markup
+
     def get_connection(self):
         '''
         This function return a connection to the database
@@ -629,7 +663,7 @@ class TeleBot:
           
             # Incase ppl forget how tomorrow is spelled
             var_of_tmrw = ['tommorrow','tmrw','tomorrow','tomorow']
-            for word in text:
+            for word in text.split(' '):
                 if word in var_of_tmrw:
                     text = "tomorrow"
 
