@@ -178,7 +178,7 @@ class TeleBot:
                     self.store_message(message)
             else:
                 # Message is possibly a reponse to bot
-                logging.info("Probably a response")
+                
                 
                 # Check if a brick has been allocated to this chat
                 # Note that a brick is only allocated when the bot
@@ -251,8 +251,7 @@ class TeleBot:
         markup = self.entity_menu_markup()
         message_id = self.bricks[chat_id]['menu_msg']['id']
         text = self.bricks[chat_id]['menu_msg']['text']
-        logging.info(message_id)
-        logging.info(chat_id)
+
         self.bot.edit_message_text(chat_id=chat_id, message_id=message_id,text=text,
                          reply_markup=markup, parse_mode="Markdown")
 
@@ -403,7 +402,7 @@ class TeleBot:
             # to aid graceful failure
 
             condition = event.is_prev_req_complete()
-            logging.info("Condition is {}".format(condition))
+            
             if condition:
 
                 # Get the detail left to be filled
