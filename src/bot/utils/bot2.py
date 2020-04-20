@@ -699,7 +699,7 @@ class TeleBot:
         None
         '''
 
-        events = ['Meeting', 'Party', 'DA', 'Exam', 'Assignement']
+        events = ['Meeting', 'Party', 'DA', 'Exam', 'Assignement', 'Project']
 
         for event in events:
             if re.search(event, message_text, re.IGNORECASE):
