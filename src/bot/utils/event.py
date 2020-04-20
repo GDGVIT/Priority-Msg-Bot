@@ -117,3 +117,14 @@ class Event:
         None
         '''
         self.valid = True
+    
+    def delete_entity(self, entity):
+        '''
+        This function deletes a entity
+        Parameter:
+        entity (string) : The entity to delete
+        Return:
+        None
+        '''
+
+        self.details[entity] = None
