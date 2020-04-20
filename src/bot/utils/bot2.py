@@ -69,7 +69,11 @@ class TeleBot:
                 logging.info("Edit")
             
             elif call.data == "store":
-                logging.info("Store")
+                # Make details valid 
+                self.bricks[call.message.chat.id]['event'].make_valid()
+
+                # Then call form action
+                self.form_action(call.message.chat.id)
 
         @self.bot.message_handler(commands=['start'])
         def send_welcome(message):
@@ -644,7 +648,7 @@ class TeleBot:
         Parameters:
         text (string): User's reply which contains date
         '''
-
+        logging.info("Using date extractor")
         # Assuming that there is only
         # one date
 
