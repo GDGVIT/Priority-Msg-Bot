@@ -5,7 +5,7 @@ import logging
 from dotenv import load_dotenv
 
 # Import utility classes
-from utils.bot import TeleBot
+from utils.bot2 import TeleBot
 
 
 # Configure logger

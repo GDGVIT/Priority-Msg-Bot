@@ -1,17 +1,18 @@
-def my_gen():
-    size = 5
-
-    index = 0
-
-    while index < size:
-        yield(index)
-        index+=1
+def get_event(tracker):
+    
+    for event in tracker:
+        yield(event)
 
 
-index = my_gen()
+tracker = ['Hey','Fuck', 'Off']
+index = get_event(tracker)
+index2 = get_event(['hola','amigos'])
 
 while True:
     try:
+        print(next(index2))
         print(next(index))
     except StopIteration:
+        print("That all folks")
         break
+
