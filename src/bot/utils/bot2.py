@@ -78,18 +78,56 @@ class TeleBot:
                 self.bot.polling()
             except Exception:
                 time.sleep(15)  
-            
+    
+    def store_message(self, chat_id, message):
+        '''
+        This function stores a message in database
+        Parameters:
+        chat_id (int): Chat ID of the telegram group
+        message (string): The message to be stored
+        Return:
+        None
+        '''
+    
+    def show_event(self, chat_id):
+        '''
+        This function returns an event being tracked
+        Parameters:
+        chat_id (int) : The Chat ID of a telegram group
+        Return:
+        string : The message to be returned
+        '''
+        message = ""
+        try: 
+            message = next(bricks[chat_id][generate_event])
+        except StopAsyncIteration:
+            message = "You are all caught up :)"
+        finally:
+            return message
+        
     def generate_brick(self):
         '''
         This function generates a dictionary 
         '''
-        
+
         brick = {}
 
         for key in ['event', 'req_id', 'generate_event', 'tracker']:
             brick[key] = None
         
         return brick
+    
+    def event_generator(self, tracker):
+        '''
+        This function is a generator which yields tracked messages
+        Parameters:
+        tracker (list) : List of messages being tracke
+        Return:
+        None
+        '''
+
+        for message in tracker:
+            yield(message)
                   
     def gen_markup(self):
         '''
@@ -106,3 +144,25 @@ class TeleBot:
                     types.InlineKeyboardButton("No", callback_data="cb_no"))
         
         return markup
+
+    def get_connection(self):
+        '''
+        This function return a connection to the database
+        Parameters:
+        None
+        Return:
+        None
+        '''
+
+        try:
+            connection = psycopg2.connect(
+               os.environ['DATABASE_URL'],
+                sslmode = 'require'
+            )
+
+            return connection
+        
+        except (Exception, psycopg2.Error) as error:
+            logging.info(error)
+            return None
+    
