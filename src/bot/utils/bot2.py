@@ -83,8 +83,13 @@ class TeleBot:
         '''
         This function generates a dictionary 
         '''
+        
+        brick = {}
 
-        for key in ['chat_id', 'event', 'req_id', ]
+        for key in ['event', 'req_id', 'generate_event', 'tracker']:
+            brick[key] = None
+        
+        return brick
                   
     def gen_markup(self):
         '''
