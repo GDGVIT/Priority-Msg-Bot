@@ -148,12 +148,12 @@ class TeleBot:
                 # Is interacting , and after interaction 
                 # The brick is destroyed
                 if message.chat.id in self.bricks:
-                    print("Found a brick")
+                    
                     # Check if reply is being given to correct query
                     condition = message.reply_to_message.message_id == self.bricks[message.chat.id]['req_id']
 
                     if condition :
-                        print("Satisfied the condition")
+                        
                         # Retrieve the event being processed
                         event = self.bricks[message.chat.id]['event']
 
@@ -214,16 +214,19 @@ class TeleBot:
         Return:
         None
         '''
-
+        logging.info("Reach graceful fail")
         # Access the event currently being processed
         # in this chat
         event = self.bricks[chat_id]['event']
 
         # Get the entity we are requesting
         entity = event.get_req_entity()
-
+        logging.info("Entity is {}".format(entity))
         # Generate a query
+        
         text = ""
+        
+    
         if entity == 'date':
             text = "Couldn't understand the date \n" 
             text += "Please enter in format *dd/mm/yy*"
@@ -232,7 +235,7 @@ class TeleBot:
             text = "Couldn't understand the time \n"
             text += "Please enter in format like *9am*"
         
-        self.bot.send_message(chat_id, text, parse_model="Markdown")
+        self.bot.send_message(chat_id, text, parse_mode="Markdown")
 
     def process_feedback(self, chat_id, feedback):
         '''
@@ -320,11 +323,16 @@ class TeleBot:
             self.send_tracked_message(chat_id)
 
         else:
-            # Else request additional details
-            # but first check if last detail was collected
+            # Else query additional details
+
+            query = ""
+
+            # but first check if prev request was completed
             # to aid graceful failure
 
-            if event.is_entity_req_complete():
+            condition = event.is_prev_req_complete()
+            logging.info("Condition is {}".format(condition))
+            if condition:
 
                 # Get the detail left to be filled
                 entity = event.get_missing_detail()

@@ -79,7 +79,7 @@ class Event:
 
         return self.req_entity
 
-    def is_entity_req_complete(self):
+    def is_prev_req_complete(self):
         '''
         This function checks if the current entity being 
         processed has been collected
@@ -90,8 +90,8 @@ class Event:
         '''
 
         if self.req_entity is not None:
-             if self.details[self.req_entity] is None:
-                 return False
+            if self.details[self.req_entity] is None:
+                return False
 
-        else:
-            True 
+        
+        return True 
