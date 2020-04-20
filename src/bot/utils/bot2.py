@@ -65,14 +65,30 @@ class TeleBot:
             elif call.data == "cb_no":
                 #self.bot.answer_callback_query(call.id, "Answer is No")
                 self.process_feedback(call.message.chat.id, False)
-            elif call.data == "edit":
-                logging.info("Edit")
-            
+
             elif call.data == "store":
                 # Make details valid 
                 self.bricks[call.message.chat.id]['event'].make_valid()
 
                 # Then call form action
+                self.form_action(call.message.chat.id)
+
+            elif call.data == "edit":
+                # Edit message to show menu
+                self.show_entity_menu(call.message.chat.id)
+            
+            elif call.data == "time":
+                # Delete exisiting time 
+                self.bricks[call.message.chat.id]['event'].delete_entity('time')
+
+                # Call form action
+                self.form_action(call.message.chat.id)
+
+            elif call.data == "date":
+                # Delete exisiting time 
+                self.bricks[call.message.chat.id]['event'].delete_entity('date')
+
+                # Call form action
                 self.form_action(call.message.chat.id)
 
         @self.bot.message_handler(commands=['start'])
@@ -214,6 +230,19 @@ class TeleBot:
                 self.bot.polling()
             except Exception:
                 time.sleep(15) 
+    
+    def show_entity_menu(self, chat_id):
+        '''
+        This generates an entity menu for users to edit
+        '''
+
+        markup = self.entity_menu_markup()
+        message_id = self.bricks[chat_id]['menu_msg_id']
+        logging.info(message_id)
+        logging.info(chat_id)
+        self.bot.edit_message_text(chat_id=chat_id, message_id=message_id,text="Which detail to edit?",
+                         reply_markup=markup)
+
 
     def graceful_fail(self, chat_id):
         '''
@@ -339,8 +368,10 @@ class TeleBot:
                 
                 markup = self.correctness_markup()
 
-                self.bot.send_message(chat_id, text, reply_markup=markup, 
+                sent_message = self.bot.send_message(chat_id, text, reply_markup=markup, 
                         parse_mode="Markdown")
+                
+                self.bricks[chat_id]['menu_msg_id'] = sent_message.message_id
 
         else:
             # Else query additional details
@@ -477,7 +508,7 @@ class TeleBot:
 
         brick = {}
 
-        for key in ['event', 'req_id', 'gen_event', 'cur_item']:
+        for key in ['event', 'req_id', 'gen_event', 'cur_item', 'menu_msg_id']:
             brick[key] = None
         
         return brick
@@ -527,6 +558,24 @@ class TeleBot:
                     types.InlineKeyboardButton("Store the event", callback_data="store"))
         
         return markup
+
+    def entity_menu_markup(self):
+        '''
+        This function generates markup for inline keyboard
+        Parameters:
+        None
+        Return:
+        None
+        '''
+        
+        logging.info("Markup being generated")
+        
+        markup = types.InlineKeyboardMarkup()
+        markup.row_width = 1
+        markup.add(types.InlineKeyboardButton("Edit date", callback_data="date"),
+                    types.InlineKeyboardButton("Edit Time", callback_data="time"))
+        
+        return markup       
 
     def get_connection(self):
         '''
