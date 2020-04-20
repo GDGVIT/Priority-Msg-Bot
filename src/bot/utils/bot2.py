@@ -191,6 +191,11 @@ class TeleBot:
                                         entity_extracted = True
                                         event.add_event_detail(entity, date)
                                 
+                                # If it is still not being recognized
+                                if entity_extracted is False:
+                                    self.graceful_fail(message.chat.id)
+                                
+                        
 
                         self.form_action(message.chat.id)
                             
@@ -200,6 +205,34 @@ class TeleBot:
                 self.bot.polling()
             except Exception:
                 time.sleep(15) 
+
+    def graceful_fail(self, chat_id):
+        '''
+        This function handles unrecognised input
+        Parameters:
+        chat_id (int): The chat ID of telegram channel
+        Return:
+        None
+        '''
+
+        # Access the event currently being processed
+        # in this chat
+        event = self.bricks[chat_id]['event']
+
+        # Get the entity we are requesting
+        entity = event.get_req_entity()
+
+        # Generate a query
+        text = ""
+        if entity == 'date':
+            text = "Couldn't understand the date \n" 
+            text += "Please enter in format *dd/mm/yy*"
+        
+        elif entity == 'time':
+            text = "Couldn't understand the time \n"
+            text += "Please enter in format like *9am*"
+        
+        self.bot.send_message(chat_id, text, parse_model="Markdown")
 
     def process_feedback(self, chat_id, feedback):
         '''
@@ -288,13 +321,26 @@ class TeleBot:
 
         else:
             # Else request additional details
+            # but first check if last detail was collected
+            # to aid graceful failure
 
-            # Get the detail left to be filled
-            entity = event.get_missing_detail()
+            if event.is_entity_req_complete():
 
-            # Formulate a query
-            query = "Please enter event "+entity
+                # Get the detail left to be filled
+                entity = event.get_missing_detail()
 
+                # Formulate a query
+                query = "Please enter event "+entity
+            else:
+                # Entity is same from the previous
+                # incomplete query
+
+                entity = event.get_req_entity() 
+
+                # Request detail again
+                query = "Please event "+entity+" again one more time"
+
+            
             # This bot is restricted to sending queries
             # The replies will be processed in the message handler
 

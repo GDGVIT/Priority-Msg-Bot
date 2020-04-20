@@ -78,3 +78,20 @@ class Event:
         '''
 
         return self.req_entity
+
+    def is_entity_req_complete(self):
+        '''
+        This function checks if the current entity being 
+        processed has been collected
+        Parameters:
+        None
+        Return:
+        bool : Whether collected (True) or not (False)
+        '''
+
+        if self.req_entity is not None:
+             if self.details[self.req_entity] is None:
+                 return False
+
+        else:
+            True 
