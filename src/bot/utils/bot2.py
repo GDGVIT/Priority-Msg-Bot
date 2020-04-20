@@ -213,6 +213,43 @@ class TeleBot:
             # If details have been collected
             # move on to next message
 
+            # but before that
+            # store the event
+
+            # Get event details
+            event_details = event.get_event_details()
+            
+            try:
+                connection = self.get_connection()
+                cursor = connection.cursor()
+
+                # Storing the event to database
+                insert_query = """INSERT INTO events (chat_id, type, description, date, time) VALUES (%s, %s, %s, %s, %s);"""
+
+                record_to_insert = tuple([event_details[key] for key in event_details])
+                record_to_insert = (self.chat_id, )+record_to_insert
+
+                cursor.execute(insert_query, record_to_insert)
+
+                # Commit
+                connection.commit()
+
+                cursor.close()
+                connection.close()
+                
+
+            except (Exception,psycopg2.Error) as error:
+                logging.info(error)
+
+            # Send confirmation to user
+            text = 'The details are \n'
+            for event_key in event_details:
+                text+='\n '+'*'+event_key+'*'+' : '+event_details[event_key]
+            text+='\n Stored sucessfully!
+
+            self.bot.send_message(chat_id, text)
+
+            # Finally move onto next element
             self.send_tracked_message(chat_id)
 
         else:
@@ -231,7 +268,6 @@ class TeleBot:
 
             # Update the req_id
             self.bricks[chat_id]['req_id'] = sent_message.message_id
-
     
     def send_tracked_message(self, chat_id):
         '''
@@ -288,9 +324,7 @@ class TeleBot:
 
         except Exception as error:
             logging.info(error)
-
-
-    
+   
     def store_message(self, message):
         '''
         This function stores a message in database
@@ -327,7 +361,6 @@ class TeleBot:
 
         except (Exception, psycopg2.Error) as error:
                 logging.info(error)            
-
         
     def generate_brick(self):
         '''
