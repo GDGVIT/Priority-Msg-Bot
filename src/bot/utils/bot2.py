@@ -115,7 +115,7 @@ class TeleBot:
                     
 
                     # List tracked events
-                    self.form_action(message.chat.id)
+                    self.send_tracked_message(message.chat.id)
 
                 except ValueError as error:
                     logging.info(error)
@@ -158,7 +158,7 @@ class TeleBot:
                         # Check what was the entity being requested
                         entity = event.get_req_entity()
 
-                        self.send_tracked_message(message.chat.id)
+                        self.form_action(message.chat.id)
                         
 
         while True:
@@ -203,25 +203,34 @@ class TeleBot:
         Return:
         None
         '''
-
+        logging.info("Form action invoked")
         # The event object can be easily accessed 
         # from the brick allocated to the chat
 
         event = self.bricks[chat_id]['event']
 
-        # Get the detail left to be filled
-        entity = event.get_missing_detail()
+        if event.is_details_complete():
+            # If details have been collected
+            # move on to next message
 
-        # Formulate a query
-        query = "Please enter event "+entity
+            self.send_tracked_message(chat_id)
 
-        # This bot is restricted to sending queries
-        # The replies will be processed in the message handler
+        else:
+            # Else request additional details
 
-        sent_message = self.bot.send_message(chat_id, query)
+            # Get the detail left to be filled
+            entity = event.get_missing_detail()
 
-        # Update the req_id
-        self.bricks[chat_id]['req_id'] = sent_message.message_id
+            # Formulate a query
+            query = "Please enter event "+entity
+
+            # This bot is restricted to sending queries
+            # The replies will be processed in the message handler
+
+            sent_message = self.bot.send_message(chat_id, query)
+
+            # Update the req_id
+            self.bricks[chat_id]['req_id'] = sent_message.message_id
 
     
     def send_tracked_message(self, chat_id):
