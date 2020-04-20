@@ -90,6 +90,18 @@ class TeleBot:
 
                 # Call form action
                 self.form_action(call.message.chat.id)
+            
+            elif call.data == "back":
+                # Go back to prev menu
+                chat_id = call.message.chat.id
+                message_id = self.bricks[chat_id]['menu_msg']['id']
+                text = self.bricks[chat_id]['menu_msg']['text']
+                
+                markup = self.correctness_markup()
+
+                self.bot.edit_message_text(chat_id=chat_id,message_id=message_id,
+                                    text=text, reply_markup=markup,
+                                    parse_mode="Markdown")
 
         @self.bot.message_handler(commands=['start'])
         def send_welcome(message):
@@ -237,11 +249,12 @@ class TeleBot:
         '''
 
         markup = self.entity_menu_markup()
-        message_id = self.bricks[chat_id]['menu_msg_id']
+        message_id = self.bricks[chat_id]['menu_msg']['id']
+        text = self.bricks[chat_id]['menu_msg']['text']
         logging.info(message_id)
         logging.info(chat_id)
-        self.bot.edit_message_text(chat_id=chat_id, message_id=message_id,text="Which detail to edit?",
-                         reply_markup=markup)
+        self.bot.edit_message_text(chat_id=chat_id, message_id=message_id,text=text,
+                         reply_markup=markup, parse_mode="Markdown")
 
 
     def graceful_fail(self, chat_id):
@@ -357,6 +370,9 @@ class TeleBot:
                 text = "Event stored sucessully"
                 self.bot.send_message(chat_id, text, parse_mode='Markdown')
 
+                # Clear the menu dictionary
+                self.bricks[chat_id]['menu_msg'].clear()
+
                 # Finally move onto next element
                 self.send_tracked_message(chat_id)
 
@@ -371,7 +387,12 @@ class TeleBot:
                 sent_message = self.bot.send_message(chat_id, text, reply_markup=markup, 
                         parse_mode="Markdown")
                 
-                self.bricks[chat_id]['menu_msg_id'] = sent_message.message_id
+                if self.bricks[chat_id]['menu_msg'] is None:
+                    self.bricks[chat_id]['menu_msg'] = {}
+                
+                # Note menu message details
+                self.bricks[chat_id]['menu_msg']['id']  = sent_message.message_id
+                self.bricks[chat_id]['menu_msg']['text'] = text
 
         else:
             # Else query additional details
@@ -508,7 +529,7 @@ class TeleBot:
 
         brick = {}
 
-        for key in ['event', 'req_id', 'gen_event', 'cur_item', 'menu_msg_id']:
+        for key in ['event', 'req_id', 'gen_event', 'cur_item', 'menu_msg']:
             brick[key] = None
         
         return brick
@@ -571,9 +592,10 @@ class TeleBot:
         logging.info("Markup being generated")
         
         markup = types.InlineKeyboardMarkup()
-        markup.row_width = 1
+        markup.row_width = 2
         markup.add(types.InlineKeyboardButton("Edit date", callback_data="date"),
-                    types.InlineKeyboardButton("Edit Time", callback_data="time"))
+                    types.InlineKeyboardButton("Edit Time", callback_data="time"),
+                    types.InlineKeyboardButton("Go back", callback_data="back"))
         
         return markup       
 
