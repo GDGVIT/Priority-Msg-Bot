@@ -57,12 +57,12 @@ class TeleBot:
         
         def callback_query(call):
             logging.info("Callback triggered")
+            
             if call.data == "cb_yes":
-                #self.bot.answer_callback_query(call.id, "Answer is Yes")
-                self.process_feedback(True)
+                self.process_feedback(call.message.chat.id, True)
             elif call.data == "cb_no":
                 #self.bot.answer_callback_query(call.id, "Answer is No")
-                self.process_feedback(False)
+                self.process_feedback(call.message.chat.id, False)
 
         @self.bot.message_handler(commands=['start'])
         def send_welcome(message):
@@ -105,16 +105,24 @@ class TeleBot:
                     if len(tracker) == 0:
                         raise ValueError("Tracker is empty")
                   
-                    self.bricks[message.chat.id]['tracker'] = tracker
+                    #self.bricks[message.chat.id]['tracker'] = tracker
 
                     # Get the generator object
                     gen_event = self.get_event_generator(tracker)
                     self.bricks[message.chat.id]['gen_event'] = gen_event
 
+
+                    
+
                     # List tracked events
+                    self.form_action(message.chat.id)
+
                 except ValueError as error:
                     logging.info(error)
                     self.bot.send_message(message.chat.id, "No imp messages were detected")
+                
+                except Exception as error:
+                    logging.info(error)
                 
 
         
@@ -143,14 +151,122 @@ class TeleBot:
                     condition = message.reply_to_message.message_id == self.bricks[message.chat.id]['req_id']
 
                     if condition :
+                        
+                        # Retrieve the event being processed
+                        event = self.bricks[message.chat.id]['event']
+
                         # Check what was the entity being requested
+                        entity = event.get_req_entity()
+
+                        self.send_tracked_message(message.chat.id)
                         
 
         while True:
             try:
                 self.bot.polling()
             except Exception:
-                time.sleep(15)  
+                time.sleep(15) 
+
+    def process_feedback(self, chat_id, feedback):
+        '''
+        This function processed feedback received from user
+        Parameters:
+        chat_id (int): Chat ID of telegram group
+        Return:
+        None
+        '''
+        
+        if feedback is False:
+            # Show the next event
+            self.send_tracked_message(chat_id)
+        
+        else:
+            logging.info("Positive feedback")
+
+            # Get the current event and create an event object 
+
+            item = self.bricks[chat_id]['cur_item']
+            event = Event(item['event_type'])
+
+            # Assign the event to the brick
+
+            self.bricks[chat_id]['event'] = event
+
+            # Now start the process of collecting information
+            self.form_action(chat_id)
+        
+    def form_action(self, chat_id):
+        '''
+        This function collects information of the event
+        Parameters:
+        chat_id : Chat ID of the telegram group
+        Return:
+        None
+        '''
+
+        # The event object can be easily accessed 
+        # from the brick allocated to the chat
+
+        event = self.bricks[chat_id]['event']
+
+        # Get the detail left to be filled
+        entity = event.get_missing_detail()
+
+        # Formulate a query
+        query = "Please enter event "+entity
+
+        # This bot is restricted to sending queries
+        # The replies will be processed in the message handler
+
+        sent_message = self.bot.send_message(chat_id, query)
+
+        # Update the req_id
+        self.bricks[chat_id]['req_id'] = sent_message.message_id
+
+    
+    def send_tracked_message(self, chat_id):
+        '''
+        This functions sends messages being tracked
+        Parameters:
+        chat_id (int): The chat ID of telegram group
+        Return:
+        None
+        '''
+
+        logging.info("Sending a tracked message")
+        # A text will be generated in this function
+        # and this text will be sent as message
+        # Get the tracker item
+
+        text = ""
+
+        try:
+            item = self.get_next_tracker_item(chat_id)
+
+            if item is None:
+                text = "You are all caught up :)"
+
+            else:
+                
+                # Store current item from tracker 
+                # This item will be used for further processing
+                self.bricks[chat_id]['cur_item'] = item
+                
+                # Extrapolate details from item 
+                # and send message
+                text = item['event_type']+" detected \n"
+                text += '_'+item['text']+'_'+' \n'
+                text += 'Store this?'
+
+
+
+        except Exception as error:
+            logging.info(error)
+        finally:
+            sent_message = self.bot.send_message(chat_id, text, 
+                            reply_markup=self.markup, 
+                            parse_mode="Markdown")
+       
     
     def store_message(self, message):
         '''
@@ -175,7 +291,7 @@ class TeleBot:
             insert_query = """INSERT INTO tracker (chat_id, message, event_type) VALUES (%s,%s, %s);"""
             # Encrypt here
             record_to_insert = (message.chat.id, message.text, event_type)
-
+            logging.info("Inserting event into database")
             cursor.execute(insert_query, record_to_insert)
 
             #Commit the insert
@@ -184,12 +300,12 @@ class TeleBot:
             #Close the cursor
             cursor.close()
             connection.close()
-            logging.info("Cursor closed")
+            logging.info("Connection being closed")
 
         except (Exception, psycopg2.Error) as error:
                 logging.info(error)            
 
-    def show_event(self, chat_id):
+    def get_next_tracker_item(self, chat_id):
         '''
         This function returns an event being tracked
         Parameters:
@@ -197,13 +313,13 @@ class TeleBot:
         Return:
         string : The message to be returned
         '''
-        message = ""
+        item = None
         try: 
-            message = next(bricks[chat_id][generate_event])
-        except StopAsyncIteration:
-            message = "You are all caught up :)"
+            item = next(self.bricks[chat_id]['gen_event'])
+        except StopIteration:
+            logging.info("Iteration Stopped")
         finally:
-            return message
+            return item
         
     def generate_brick(self):
         '''
@@ -212,7 +328,7 @@ class TeleBot:
 
         brick = {}
 
-        for key in ['event', 'req_id', 'gen_event', 'tracker']:
+        for key in ['event', 'req_id', 'gen_event', 'cur_item']:
             brick[key] = None
         
         return brick
@@ -226,8 +342,8 @@ class TeleBot:
         None
         '''
 
-        for message in tracker:
-            yield(message)
+        for item in tracker:
+            yield(item)
                   
     def gen_markup(self):
         '''
@@ -282,7 +398,7 @@ class TeleBot:
             cursor = connection.cursor()
 
             select_query = "SELECT * FROM tracker WHERE chat_id="+str(chat_id)
-
+            logging.info("Querying from database")
             cursor.execute(select_query)
 
             records = cursor.fetchall()

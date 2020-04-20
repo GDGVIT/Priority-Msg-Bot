@@ -1,18 +1,26 @@
-def get_event(tracker):
-    
-    for event in tracker:
-        yield(event)
-
-
-tracker = ['Hey','Fuck', 'Off']
-index = get_event(tracker)
-index2 = get_event(['hola','amigos'])
-
-while True:
-    try:
-        print(next(index2))
-        print(next(index))
-    except StopIteration:
-        print("That all folks")
-        break
+{'game_short_name': None, 
+'chat_instance': '-2248192099587011709', 
+'id': '2469572960604862310', 
+'from_user': {'id': 574992261, 'is_bot': False, 'first_name': 'Raman', 'username': None, 'last_name': None, 
+'language_code': 'en'}, 
+'message': {'content_type': 'text', 'message_id': 2021, 'from_user': <telebot.types.User object at 0x7fcd0b2f5da0>, 
+    'date': 1587389468, 'chat': <telebot.types.Chat object at 0x7fcd0b2f5d30>, 
+    'forward_from_chat': None, 'forward_from_message_id': None, 'forward_from': None, 'forward_date': None, 
+    'reply_to_message': None, 'edit_date': None, 'media_group_id': None, 'author_signature': None, 
+    'text': 'Meeting detected \nThere is a meeting tmrw \nStore this?', 
+    'entities': [<telebot.types.MessageEntity object at 0x7fcd0b2f5ba8>],
+     'caption_entities': None, 'audio': None, 'document': None, 'photo': None, 
+     'sticker': None, 'video': None, 'video_note': None, 'voice': None, 
+     'caption': None, 'contact': None, 'location': None, 'venue': None, 
+     'animation': None, 'new_chat_member': None, 'new_chat_members': None, 
+     'left_chat_member': None, 'new_chat_title': None, 'new_chat_photo': None,
+      'delete_chat_photo': None, 'group_chat_created': None, 'supergroup_chat_created': None,
+       'channel_chat_created': None, 'migrate_to_chat_id': None, 'migrate_from_chat_id': None,
+        'pinned_message': None, 'invoice': None, 'successful_payment': None, 'connected_website': None, 
+        'json': {'message_id': 2021, 'from': {'id': 1048288186, 'is_bot': True, 'first_name': 'argos', 
+        'username': 'argos_msg_bot'}, 'chat': {'id': 574992261, 'first_name': 'Raman', 'type': 'private'}, 
+        'date': 1587389468, 'text': 'Meeting detected \nThere is a meeting tmrw \nStore this?',
+         'entities': [{'offset': 18, 'length': 23, 'type': 'italic'}], 
+         'reply_markup': {'inline_keyboard': [[{'text': 'Yes', 'callback_data': 'cb_yes'},
+          {'text': 'No', 'callback_data': 'cb_no'}]]}}}, 'data': 'cb_no', 'inline_message_id': None}
 

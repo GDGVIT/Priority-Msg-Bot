@@ -5,3 +5,4 @@ src/bot/utils/__pycache__/
 src/bot/utils/__pycache__/event.cpython-36.pyc
 src/tb/
 src/bot/utils/__pycache__/bot2.cpython-36.pyc
+src/bot/con.py
