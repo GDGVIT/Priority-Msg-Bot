@@ -18,6 +18,7 @@ class Event:
 
         self.req_entity = None
         
+        self.valid = False
   
 
     def is_details_complete(self):
@@ -95,3 +96,14 @@ class Event:
 
         
         return True 
+    
+    def are_details_valid(self):
+        '''
+        This function returns if details are valid
+        Parameters:
+        None
+        Return:
+        bool : True if valid else False
+        '''
+
+        return self.valid

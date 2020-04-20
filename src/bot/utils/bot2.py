@@ -408,7 +408,7 @@ class TeleBot:
             del self.brick[chat_id]
 
             # well you can only dereference
-            # and garbase collector will deal with it
+            # and garbage collector will deal with it
 
         except Exception as error:
             logging.info(error)
