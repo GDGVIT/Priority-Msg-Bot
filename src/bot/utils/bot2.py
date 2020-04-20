@@ -146,20 +146,44 @@ class TeleBot:
                 # Is interacting , and after interaction 
                 # The brick is destroyed
                 if message.chat.id in self.bricks:
-                    
+                    print("Found a brick")
                     # Check if reply is being given to correct query
                     condition = message.reply_to_message.message_id == self.bricks[message.chat.id]['req_id']
 
                     if condition :
-                        
+                        print("Satisfied the condition")
                         # Retrieve the event being processed
                         event = self.bricks[message.chat.id]['event']
 
                         # Check what was the entity being requested
                         entity = event.get_req_entity()
 
+                        # There will be multiple tiers of information extraction
+                        # although no such extraction needed for desc
+
+                        if entity == 'description':
+                            event.add_event_detail('description', message.text)
+
+                        else:
+                            # 1) Use a NER
+                            body = json.dumps({'text':message.text})
+
+                            response = requests.post(self.parser_url, body)
+                            response = response.json()
+
+                            # Check if NER is success using 
+                            # the flag below
+                            entity_extracted = False
+
+                            for item in response['entities']:
+                                if item['entity'] == entity:
+                                    event.add_event_detail(entity, item['value'])
+                                    entity_extracted = True
+                            
+                            
+
                         self.form_action(message.chat.id)
-                        
+                            
 
         while True:
             try:
@@ -227,7 +251,7 @@ class TeleBot:
                 insert_query = """INSERT INTO events (chat_id, type, description, date, time) VALUES (%s, %s, %s, %s, %s);"""
 
                 record_to_insert = tuple([event_details[key] for key in event_details])
-                record_to_insert = (self.chat_id, )+record_to_insert
+                record_to_insert = (chat_id, )+record_to_insert
 
                 cursor.execute(insert_query, record_to_insert)
 
@@ -245,9 +269,9 @@ class TeleBot:
             text = 'The details are \n'
             for event_key in event_details:
                 text+='\n '+'*'+event_key+'*'+' : '+event_details[event_key]
-            text+='\n Stored sucessfully!
+            text+='\n Stored sucessfully!'
 
-            self.bot.send_message(chat_id, text)
+            self.bot.send_message(chat_id, text, parse_mode='Markdown')
 
             # Finally move onto next element
             self.send_tracked_message(chat_id)
