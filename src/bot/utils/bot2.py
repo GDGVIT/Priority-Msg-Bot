@@ -117,6 +117,21 @@ class TeleBot:
             
             self.bot.reply_to(message, 'Bot is active and listening')
 
+        @self.bot.message_handler(commands=['remind'])
+        def show_stored_messages(message):
+            '''
+            This function shows the messages stored
+            in the database
+            Parameters:
+            message (dictionary) : Message object returned by telegram
+
+            Return:
+            None
+            '''
+
+            self.send_stored_messages(message.chat.id)
+
+        
         @self.bot.message_handler(commands=['show'])
         def show_messages(message):
             '''
@@ -763,4 +778,37 @@ class TeleBot:
                 date+= str(date_object.year)
                 return date
             
+    def send_stored_messages(self, chat_id):
+        '''
+        This function fetches stored messages from 
+        database and prints them
+        '''
+        try:
+            connection = self.get_connection()
+            cursor = connection.cursor()
+            # Replace
+            select_query = "SELECT * FROM events WHERE chat_id="+str(chat_id)
+            
+            cursor.execute(select_query)
 
+            records = cursor.fetchall()
+            
+            if len(records) == 0:
+                # Replace
+                self.bot.send_message(chat_id, "There were no stored messages")
+            
+            else:
+            
+                for row in records:
+                    # Decrypt messages here
+                    # Replace
+                    text = row[2] + " on *"+row[4]+"* at *"+row[5]+"*\n"+"_"+row[3]+"_"
+                    self.bot.send_message(chat_id,text,parse_mode="Markdown")
+
+                self.bot.send_message(chat_id, "That's all your stored messages")
+            
+            cursor.close()
+            connection.close()
+
+        except Exception as error:
+            logging.info(error)
