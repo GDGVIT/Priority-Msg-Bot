@@ -15,6 +15,8 @@ class Event:
             'date': None,
             'time':None,
         }
+
+        self.req_entity = None
         
   
 
@@ -50,6 +52,7 @@ class Event:
 
         for event_key in self.details:
             if self.details[event_key] is None:
+                self.req_entity = event_key
                 return event_key
         return None     
     
@@ -63,3 +66,15 @@ class Event:
         '''
 
         self.details[event_key] = event_value
+
+    def get_req_entity(self):
+        '''
+        This function returns the entity being currently processed
+
+        Parameters:
+        None
+        Return:
+        string : The entity being requested
+        '''
+
+        return self.req_entity
