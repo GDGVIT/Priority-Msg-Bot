@@ -166,3 +166,55 @@ class TeleBot:
             logging.info(error)
             return None
     
+    def retrieve_tracker(self, chat_id):
+        '''
+        This function retrieves the tracked messages from database
+        Parameters:
+        chat_id (int) : Chat ID of telegram group
+        Return:
+        list : A list of tracked messages from database
+        '''
+
+        tracker = []
+
+        try:
+            connection = self.get_connection()
+            cursor = connection.cursor()
+
+            select_query = "SELECT * FROM tracker WHERE chat_id="+str(chat_id)
+
+            cursor.execute(select_query)
+
+            records = cursor.fetchall()
+
+            cursor.close()
+            connection.close()
+
+            else:
+                for row in records:
+                    item = self.get_tracker_item(row)
+                    tracker.append(item)
+        
+        except Exception as error:
+            logging.info(error)
+        
+        finally:
+            return tracker
+
+    def get_tracker_item(self, message):
+        '''
+        This function generates the item stored in tracker
+        Parameters:
+        message (string): The message to be processed
+        Return:
+        dictionary: The item to be added to tracker
+        '''
+
+        item = {
+            'id':row[0],
+            'chat_id':row[1],
+            'text':row[2],
+            'event_type':row[3]
+        }
+
+        return item
