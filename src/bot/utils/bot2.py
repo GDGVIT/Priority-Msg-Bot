@@ -37,6 +37,9 @@ class TeleBot:
         logging.info("URL parser set : {}".format(self.parser_url))
 
         self.markup = self.gen_markup()
+
+        # Initialize a dictionary
+        self.bricks = {}
     
     def activate(self):
         '''
@@ -50,6 +53,8 @@ class TeleBot:
         '''       
         
         @self.bot.callback_query_handler(func=lambda call: True)
+        
+        
         def callback_query(call):
             logging.info("Callback triggered")
             if call.data == "cb_yes":
@@ -73,13 +78,69 @@ class TeleBot:
             
             self.bot.reply_to(message, 'Bot is active and listening')
 
+        @self.bot.message_handler(commands=['show'])
+        def show_messages(message):
+            '''
+            This function is used to test if bot is active
+
+            Parameters:
+            message (dictionary) : Message object returned by telegram
+
+            Return:
+            None
+            '''
+            
+            self.bot.reply_to(message, 'Brb with your messages')
+
+            # Allocate a brick to chat
+            if message.chat.id not in self.bricks:
+
+                try:
+                    self.bricks[message.chat.id] = self.generate_brick()
+
+                    # Populate the brick with relevant data
+
+                    # Get tracked messages
+                    tracker = self.retrieve_tracker(message.chat.id)
+                    if len(tracker) == 0:
+                        raise ValueError("Tracker is empty")
+                  
+                    self.bricks[message.chat.id]['tracker'] = tracker
+
+                    # Get the generator object
+                    gen_event = self.get_event_generator(tracker)
+                    self.bricks[message.chat.id]['gen_event'] = gen_event
+
+                    # List tracked events
+                except ValueError as error:
+                    logging.info(error)
+                    self.bot.send_message(message.chat.id, "No imp messages were detected")
+                
+
+        
+        @self.bot.message_handler(func = lambda message : True)
+        def track_messages(message):
+
+            if message.reply_to_message is None:
+                if self.is_event_notification(message.text):
+
+                    # Message is an event
+                    # Store it!
+
+                    logging.info("Event detected")
+                    self.store_message(message)
+            else:
+                # Message is possibly a reponse to bot
+                logging.info("Probably a response")
+
+
         while True:
             try:
                 self.bot.polling()
             except Exception:
                 time.sleep(15)  
     
-    def store_message(self, chat_id, message):
+    def store_message(self, message):
         '''
         This function stores a message in database
         Parameters:
@@ -139,12 +200,12 @@ class TeleBot:
 
         brick = {}
 
-        for key in ['event', 'req_id', 'generate_event', 'tracker']:
+        for key in ['event', 'req_id', 'gen_event', 'tracker']:
             brick[key] = None
         
         return brick
     
-    def event_generator(self, tracker):
+    def get_event_generator(self, tracker):
         '''
         This function is a generator which yields tracked messages
         Parameters:
@@ -217,11 +278,11 @@ class TeleBot:
             cursor.close()
             connection.close()
 
-            else:
-                for row in records:
-                    item = self.get_tracker_item(row)
-                    tracker.append(item)
-        
+            
+            for row in records:
+                item = self.get_tracker_item(row)
+                tracker.append(item)
+    
         except Exception as error:
             logging.info(error)
         
@@ -247,3 +308,41 @@ class TeleBot:
         return item
 
     def extract_event(self, message_text):
+        '''
+        This function extracts events from the message
+        NER not able to parse the message
+
+        Parameters:
+        message_text (string) : The text message that was given
+
+        Return:
+        None
+        '''
+
+        events = ['Meeting', 'Party', 'DA', 'Exam', 'Assignement']
+
+        for event in events:
+            if re.search(event, message_text, re.IGNORECASE):
+                return event
+        return None
+        
+    def is_event_notification(self, message_text):
+        '''
+        This function checks if message is important or not
+        Parameters:
+        message_text (string) : The message from user
+        Return:
+        bool : True if message is important else False
+        '''
+
+        logging.info('Event notification being checked')
+        #Make request to backend
+        body = json.dumps({"text":message_text})
+
+        response = requests.post(self.parser_url, body)
+        response = response.json()
+
+        cond1 = float(response['intent']['confidence']) >= 0.8
+        cond2 = response['intent']['name'] == 'event_notification'
+        if cond1 and cond2:
+            return True
