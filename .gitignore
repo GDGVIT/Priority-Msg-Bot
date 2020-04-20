@@ -3,3 +3,4 @@ src/backend/__pycache__/
 src/backend/models/
 src/bot/utils/__pycache__/bot.cpython-36.pyc
 src/bot/utils/__pycache__/event.cpython-36.pyc
+src/tb/
