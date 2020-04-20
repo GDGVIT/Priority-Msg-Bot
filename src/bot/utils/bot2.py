@@ -187,6 +187,9 @@ class TeleBot:
 
                                 if entity == 'date':
                                     date = self.extract_date(message.text)
+                                    if date is not None:
+                                        entity_extracted = True
+                                        event.add_event_detail(entity, date)
                                 
 
                         self.form_action(message.chat.id)
