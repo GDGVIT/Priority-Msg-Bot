@@ -107,3 +107,13 @@ class Event:
         '''
 
         return self.valid
+    
+    def make_valid(self):
+        '''
+        This function sets valid to True
+        Parameters:
+        None
+        Return:
+        None
+        '''
+        self.valid = True
