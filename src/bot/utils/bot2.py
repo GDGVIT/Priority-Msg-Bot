@@ -32,7 +32,7 @@ class TeleBot:
         '''
 
         # Initialize bot
-        self.bot = telebot.TeleBot(token=bot_token, threaded=False)
+        self.bot = telebot.TeleBot(token=bot_token, threaded=True)
         
         # Rasa API endpoint
         self.parser_url = parser_url
@@ -476,7 +476,7 @@ class TeleBot:
             # unless you want someone to DOS
             # the shit out of the bot
 
-            del self.brick[chat_id]
+            del self.bricks[chat_id]
 
             # well you can only dereference
             # and garbage collector will deal with it
