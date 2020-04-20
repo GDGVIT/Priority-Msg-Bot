@@ -241,32 +241,46 @@ class TeleBot:
         text = ""
 
         try:
-            item = self.get_next_tracker_item(chat_id)
-
-            if item is None:
-                text = "You are all caught up :)"
-
-            else:
+        
+            item = next(self.bricks[chat_id]['gen_event'])        
                 
-                # Store current item from tracker 
-                # This item will be used for further processing
-                self.bricks[chat_id]['cur_item'] = item
-                
-                # Extrapolate details from item 
-                # and send message
-                text = item['event_type']+" detected \n"
-                text += '_'+item['text']+'_'+' \n'
-                text += 'Store this?'
+            # Store current item from tracker 
+            # This item will be used for further processing
+            self.bricks[chat_id]['cur_item'] = item
+            
+            # Extrapolate details from item 
+            # and send message
+            text = item['event_type']+" detected \n"
+            text += '_'+item['text']+'_'+' \n'
+            text += 'Store this?'
 
+            sent_message = self.bot.send_message(chat_id, text, 
+                reply_markup=self.markup, 
+                parse_mode="Markdown")
 
+        except StopIteration:
+            # All tracked messages have been sent already
+
+            logging.info("Iteration Stopped")
+            
+            text = "You are all caught up :)"
+
+            sent_message = self.bot.send_message(chat_id, text, 
+                parse_mode="Markdown")
+
+            # Destroy the brick
+            # unless you want someone to DOS
+            # the shit out of the bot
+
+            del self.brick[chat_id]
+
+            # well you can only dereference
+            # and garbase collector will deal with it
 
         except Exception as error:
             logging.info(error)
-        finally:
-            sent_message = self.bot.send_message(chat_id, text, 
-                            reply_markup=self.markup, 
-                            parse_mode="Markdown")
-       
+
+
     
     def store_message(self, message):
         '''
@@ -305,21 +319,6 @@ class TeleBot:
         except (Exception, psycopg2.Error) as error:
                 logging.info(error)            
 
-    def get_next_tracker_item(self, chat_id):
-        '''
-        This function returns an event being tracked
-        Parameters:
-        chat_id (int) : The Chat ID of a telegram group
-        Return:
-        string : The message to be returned
-        '''
-        item = None
-        try: 
-            item = next(self.bricks[chat_id]['gen_event'])
-        except StopIteration:
-            logging.info("Iteration Stopped")
-        finally:
-            return item
         
     def generate_brick(self):
         '''
