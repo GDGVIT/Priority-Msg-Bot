@@ -1,12 +1,14 @@
-import time
-import telebot
-import json
 import re
 import os
 import time
+import json
+import telebot
+import logging
 import requests
 import psycopg2
-import logging
+import datefinder
+from datetime import datetime
+from tsresolve import point_of_time
 from telebot import types
 
 # Import utility class
@@ -539,3 +541,56 @@ class TeleBot:
         cond2 = response['intent']['name'] == 'event_notification'
         if cond1 and cond2:
             return True
+
+    def extract_date(self, text):
+        '''
+        This function extracts date from the text
+        Parameters:
+        text (string): User's reply which contains date
+        '''
+
+        # Assuming that there is only
+        # one date
+
+        # First with datefinder
+        
+        match_generator = datefinder.find_dates(text)
+        date_object = None
+        
+        try:
+        
+            date_object = next(match_generator)
+            print(date_object)
+        
+        except StopIteration:
+        
+          
+            # Incase ppl forget how tomorrow is spelled
+            var_of_tmrw = ['tommorrow','tmrw','tomorrow','tomorow']
+            for word in text:
+                if word in var_of_tmrw:
+                    text = "tomorrow"
+
+            # Try tsresolve
+            date_string = point_of_time(text)[0]
+
+            if date_string is not None:
+                
+                date_string = date_string.split('T')[0]
+
+                format = '%Y-%m-%d'
+
+                date_object = datetime.strptime(date_string, format)
+
+        finally:
+        
+            if date_object is None:
+                logging.info("Date couldn't be extracted")
+                return None
+            else:
+                date = str(date_object.day)+'/'
+                date+= str(date_object.month)+'/'           
+                date+= str(date_object.year)
+                return date
+            
+
