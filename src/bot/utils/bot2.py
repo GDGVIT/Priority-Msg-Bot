@@ -132,7 +132,19 @@ class TeleBot:
             else:
                 # Message is possibly a reponse to bot
                 logging.info("Probably a response")
+                
+                # Check if a brick has been allocated to this chat
+                # Note that a brick is only allocated when the bot
+                # Is interacting , and after interaction 
+                # The brick is destroyed
+                if message.chat.id in self.bricks:
+                    
+                    # Check if reply is being given to correct query
+                    condition = message.reply_to_message.message_id == self.bricks[message.chat.id]['req_id']
 
+                    if condition :
+                        # Check what was the entity being requested
+                        
 
         while True:
             try:
