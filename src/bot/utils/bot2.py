@@ -88,7 +88,34 @@ class TeleBot:
         Return:
         None
         '''
-    
+        event_type = self.extract_event(message.text)
+
+        if event_type is None:
+            event_type = 'Some event'
+        
+        
+        try: 
+            connection = self.get_connection()
+            cursor = connection.cursor()   
+
+            # Insert the message into postgres
+            insert_query = """INSERT INTO tracker (chat_id, message, event_type) VALUES (%s,%s, %s);"""
+            # Encrypt here
+            record_to_insert = (message.chat.id, message.text, event_type)
+
+            cursor.execute(insert_query, record_to_insert)
+
+            #Commit the insert
+            connection.commit()
+
+            #Close the cursor
+            cursor.close()
+            connection.close()
+            logging.info("Cursor closed")
+
+        except (Exception, psycopg2.Error) as error:
+                logging.info(error)            
+
     def show_event(self, chat_id):
         '''
         This function returns an event being tracked
@@ -201,7 +228,7 @@ class TeleBot:
         finally:
             return tracker
 
-    def get_tracker_item(self, message):
+    def get_tracker_item(self, row):
         '''
         This function generates the item stored in tracker
         Parameters:
@@ -218,3 +245,5 @@ class TeleBot:
         }
 
         return item
+
+    def extract_event(self, message_text):
