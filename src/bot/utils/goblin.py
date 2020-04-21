@@ -1,3 +1,4 @@
+import logging
 from cryptography.fernet import Fernet
 
 class Goblin:
@@ -26,7 +27,7 @@ class Goblin:
       enc_stream = self.f.encrypt(byte_stream)
       enc_string = enc_stream.decode('utf-8')
     except Exception as error:
-      print(error)
+      logging.info(error)
     finally:
       return enc_string
   
@@ -43,6 +44,6 @@ class Goblin:
       enc_stream = bytes(enc_string, encoding='utf-8')
       dec_string = self.f.decrypt(enc_stream).decode('utf-8')
     except Exception as error:
-      print(error)
+        logging.info(error)
     finally:
       return dec_string

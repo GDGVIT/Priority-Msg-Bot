@@ -530,7 +530,12 @@ class TeleBot:
             # Insert the message into postgres
             insert_query = """INSERT INTO tracker (chat_id, message, event_type) VALUES (%s,%s, %s);"""
             # Encrypt here
-            record_to_insert = (message.chat.id, message.text, event_type)
+
+            message_text = self.goblin.encrypt(message.text)
+            if message_text is None:
+                raise Exception("Failed to encrypt")
+            logging.info("Message encrypted")
+            record_to_insert = (message.chat.id, message_text, event_type)
             logging.info("Inserting event into database")
             cursor.execute(insert_query, record_to_insert)
 
@@ -543,7 +548,15 @@ class TeleBot:
             logging.info("Connection being closed")
 
         except (Exception, psycopg2.Error) as error:
-                logging.info(error)            
+                logging.info(error)
+
+        finally:
+            if cursor:
+                cursor.close()
+
+            if connection:
+                connection.close()
+                        
         
     def generate_brick(self):
         '''
@@ -670,6 +683,9 @@ class TeleBot:
             
             for row in records:
                 item = self.get_tracker_item(row)
+                
+                #Decrypt message here
+                item['text'] = self.goblin.decrypt(item['text'])
                 tracker.append(item)
     
         except Exception as error:
