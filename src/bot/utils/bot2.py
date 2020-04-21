@@ -159,30 +159,27 @@ class TeleBot:
             if message.chat.id not in self.bricks:
 
                 try:
+                    
+                    # Get tracked messages
+                    tracker = self.retrieve_tracker(message.chat.id)
+                    if len(tracker) == 0:
+                        self.bot.send_message(message.chat.id, "No imp messages were detected")
+                        raise ValueError("Tracker is empty")
+                    
                     self.bricks[message.chat.id] = self.generate_brick()
 
                     # Populate the brick with relevant data
 
-                    # Get tracked messages
-                    tracker = self.retrieve_tracker(message.chat.id)
-                    if len(tracker) == 0:
-                        raise ValueError("Tracker is empty")
-                  
-                    #self.bricks[message.chat.id]['tracker'] = tracker
-
                     # Get the generator object
                     gen_event = self.get_event_generator(tracker)
                     self.bricks[message.chat.id]['gen_event'] = gen_event
-
-
-                    
 
                     # List tracked events
                     self.send_tracked_message(message.chat.id)
 
                 except ValueError as error:
                     logging.info(error)
-                    self.bot.send_message(message.chat.id, "No imp messages were detected")
+                    #self.bot.send_message(message.chat.id, "No imp messages were detected")
                 
                 except Exception as error:
                     logging.info(error)
@@ -704,7 +701,7 @@ class TeleBot:
             
             for row in records:
                 item = self.get_tracker_item(row)
-                
+                logging.info("HERE")
                 #Decrypt message here
                 item['text'] = self.goblin.decrypt(item['text'])
                 tracker.append(item)
@@ -835,6 +832,7 @@ class TeleBot:
             # Replace
             select_query = "SELECT * FROM events WHERE chat_id="+str(chat_id)
             
+            logging.info("Querying from database")
             cursor.execute(select_query)
 
             records = cursor.fetchall()
