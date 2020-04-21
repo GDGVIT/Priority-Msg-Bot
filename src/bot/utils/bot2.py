@@ -496,6 +496,27 @@ class TeleBot:
             sent_message = self.bot.send_message(chat_id, text, 
                 parse_mode="Markdown")
 
+            # Empty the tracker
+            try:
+                connection = self.get_connection()
+                cursor = connection.cursor()
+
+                delete_query = "DELETE FROM tracker where chat_id="+str(chat_id)+";"
+                
+                cursor.execute(delete_query)
+
+                # Commit changes
+                connection.commit()
+
+                cursor.close()
+                connection.close()
+
+            except (Exception, psycopg2.Error) as error:
+                # If exception occurs
+                logging.info(error)
+            
+            logging.info("Cleared tracked messages")
+
             # Destroy the brick
             # unless you want someone to DOS
             # the shit out of the bot
