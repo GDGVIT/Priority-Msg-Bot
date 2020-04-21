@@ -129,6 +129,10 @@ class TeleBot:
             None
             '''
 
+            # Send a confirmation that command was received
+            self.bot.reply_to(message, "Brb with your remineders..")
+
+            # Retrieve and send all the message
             self.send_stored_messages(message.chat.id)
 
         
