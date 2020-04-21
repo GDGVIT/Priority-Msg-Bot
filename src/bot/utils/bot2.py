@@ -13,13 +13,14 @@ from telebot import types
 
 # Import utility class
 from utils.event import Event
+from utils.goblin import Goblin
 
 class TeleBot: 
     '''
     This is the class which initializes a telegram bot
     '''
 
-    def __init__(self, bot_token, parser_url):
+    def __init__(self, bot_token, parser_url, encryption_key):
         '''
         The constructor for TeleBot class
 
@@ -37,6 +38,10 @@ class TeleBot:
         # Rasa API endpoint
         self.parser_url = parser_url
         logging.info("URL parser set : {}".format(self.parser_url))
+
+        # Initialize Goblin
+        self.goblin = Goblin(bytes(encryption_key, encoding='utf-8')
+        logging.info("Goblin initialized")
 
         self.markup = self.gen_markup()
 
