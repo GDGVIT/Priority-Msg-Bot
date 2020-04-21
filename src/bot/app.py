@@ -18,6 +18,7 @@ load_dotenv()
 
 bot_token = os.getenv('BOT_TOKEN')
 parser_url = os.getenv('PARSER_URL')
+encryption_key = os.getenv('ENCRYPTION_KEY')
 
 
 
