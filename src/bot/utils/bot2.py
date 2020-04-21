@@ -135,7 +135,7 @@ class TeleBot:
             '''
 
             # Send a confirmation that command was received
-            self.bot.reply_to(message, "Brb with your remineders..")
+            self.bot.reply_to(message, "Brb with your reminders..")
 
             # Retrieve and send all the message
             self.send_stored_messages(message.chat.id)
@@ -838,14 +838,13 @@ class TeleBot:
             records = cursor.fetchall()
             
             if len(records) == 0:
-                # Replace
                 self.bot.send_message(chat_id, "There were no stored messages")
             
             else:
             
                 for row in records:
                     # Decrypt messages here
-                    # Replace
+
                     text = row[2] + " on *"+row[4]+"* at *"+row[5]+"*\n"+"_"+row[3]+"_"
                     self.bot.send_message(chat_id,text,parse_mode="Markdown")
 
