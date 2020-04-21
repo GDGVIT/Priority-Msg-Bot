@@ -107,11 +107,12 @@ class TeleBot:
             None
             '''
             self.chat_id = message.chat.id
-            
+            # Pass
             self.bot.reply_to(message, 'Bot is active and listening')
         
         @self.bot.message_handler(commands=['remind'])
         def send_reminder(message):
+            # Pass
             self.chat_id = message.chat.id
             logging.info("Sending stored messages")
             self.get_stored_messages()
@@ -127,26 +128,9 @@ class TeleBot:
             Return:
             None
             '''
-
+            # Pass
 
             self.chat_id = message.chat.id
-
-            # logging.info("Long polling unread messages")
-            # updates = self.bot.get_updates()
-
-            # for update in updates:
-            #     text = update.message.text
-            #     if self.is_event_notification(text):
-            #         event_type = self.extract_event(text)
-
-            #         logging.info(event_type + " Detected")
-
-            #         # Incase event type not found
-            #         if event_type is None:
-            #             event_type = 'Some event'
-                    
-            #         item = self.get_tracker_item(text, event_type)
-            #         self.tracker.append(item)
 
             # Debugging mutex status
             self.mutex_status()
@@ -161,6 +145,7 @@ class TeleBot:
                 logging.info("Showing messages")
 
                 # Send a message to user
+                # Replace
                 self.bot.send_message(self.chat_id, "Brb with your tracked messages!")
 
                 # Lock the mutex
@@ -173,9 +158,11 @@ class TeleBot:
                 self.clear_state()
 
                 # Set chat id
+                # Replace
                 self.chat_id = message.chat.id
                 
                 # Retrive records
+                # Replace
                 select_query = "SELECT * FROM tracker where chat_id="+str(self.chat_id)+";"
 
                 connection = self.get_connection()
@@ -194,6 +181,7 @@ class TeleBot:
                     #Populate tracker list
 
                     item = self.get_tracker_item(row)
+                    #Decrypt message here
                     self.tracker.append(item)
 
                 self.item_ptr = 0
@@ -237,6 +225,7 @@ class TeleBot:
 
                             # Insert the message into postgres
                             insert_query = """INSERT INTO tracker (chat_id, message, event_type) VALUES (%s,%s, %s);"""
+                            # Encrypt here
                             record_to_insert = (message.chat.id, message.text, event_type)
 
                             cursor.execute(insert_query, record_to_insert)
@@ -281,7 +270,7 @@ class TeleBot:
                 
                 
                 question = self.entity_to_request()
-
+                # Replace
                 sent_message = self.bot.send_message(self.chat_id, question, parse_mode="Markdown")
 
                 if self.event.is_details_complete() :
@@ -311,14 +300,20 @@ class TeleBot:
     def get_stored_messages(self):
         '''
         This function retrieves stored messages
+        Parameters:
+        None
+        Return:
+        None
         '''
+        # Args
         self.mutex = True
+        #Replace
         self.bot.send_message(self.chat_id, "Brb with you stored messages!")
         
         try:
             connection = self.get_connection()
             cursor = connection.cursor()
-
+            # Replace
             select_query = "SELECT * FROM events WHERE chat_id="+str(self.chat_id)
             
             cursor.execute(select_query)
@@ -326,9 +321,12 @@ class TeleBot:
             records = cursor.fetchall()
             
             if len(records) == 0:
+                # Replace
                 self.bot.send_message(self.chat_id, "There were no stored messages")
             
             for row in records:
+                # Decrypt messages here
+                # Replace
                 text = row[2] + " on *"+row[4]+"* at *"+row[5]+"*\n"+"_"+row[3]+"_"
                 self.bot.send_message(self.chat_id,text,parse_mode="Markdown")
             
@@ -360,8 +358,12 @@ class TeleBot:
     def process_feedback(self,positive):
         '''
         This function processes feedback given for events
+        Parameter:
+        positive (bool) : The feedback given by user
+        Return:
+        None
         '''
-
+        # Args
         logging.info("Processing feedback")
         if positive is True:
 
@@ -371,7 +373,7 @@ class TeleBot:
             
             
             question = self.entity_to_request()
-
+            # Replace
             sent_message = self.bot.send_message(self.chat_id, question)
 
             self.ent_req_id = sent_message.message_id
@@ -391,12 +393,18 @@ class TeleBot:
 
     def release_bot(self):
         '''
-        This function sends the last message that tracker is empty
+        This function sends the last message after tracker is emptied
+        Parameters:
+        None
+        Return:
+        None
         '''
+        #Args
         # Clear the tracker
         self.tracker = []
 
         # Clear tracked messages
+        # Replace
         delete_query = "DELETE FROM tracker where chat_id="+str(self.chat_id)+";"
         
         connection = self.get_connection()
@@ -417,9 +425,17 @@ class TeleBot:
 
         #Release lock
         self.mutex = False
+        #Replace
         self.bot.send_message(self.chat_id, 'You are all caught up :)')
 
     def gen_markup(self):
+        '''
+        This function generates markup for inline keyboard
+        Parameters:
+        None
+        Return:
+        None
+        '''
         logging.info("Markup being generated")
         markup = types.InlineKeyboardMarkup()
         markup.row_width = 2
@@ -436,7 +452,7 @@ class TeleBot:
         Return:
         None
         '''
-
+        # Args
         event_key = self.event.get_missing_detail()
 
 
@@ -461,7 +477,8 @@ class TeleBot:
                 
                     # Storing the event to database
                     insert_query = """INSERT INTO events (chat_id, type, description, date, time) VALUES (%s, %s, %s, %s, %s);"""
-
+                    # Encrypt messages
+                    # Replace
                     record_to_insert = tuple([event_details[key] for key in event_details])
                     record_to_insert = (self.chat_id, )+record_to_insert
 
@@ -489,6 +506,10 @@ class TeleBot:
     def clear_state(self):
         '''
         This function clears the state of bot
+        Parameters:
+        None
+        Return:
+        None
         '''
 
         print("State being wiped")
@@ -510,23 +531,14 @@ class TeleBot:
         Return:
         None
         '''
-        
+        # Args
         if (self.item_ptr < len(self.tracker)):
             text = self.tracker[self.item_ptr]['event_type']+' detected \n'
             text+= '_'+self.tracker[self.item_ptr]['text']+'_'+'\n'
 
             text+='Store this?'
 
-            # #Inline keyboard
-            # markup = types.ReplyKeyboardMarkup()
-            # btn1 = types.KeyboardButton('Yes')
-            # btn2 = types.KeyboardButton('No')
-            # markup.add(btn1,btn2)
-
-            # #print('Markup complete')
-            # sent_message = self.bot.send_message(self.chat_id, text,
-            #             reply_markup=markup, parse_mode="Markdown")
-
+            # Replace
             self.bot.send_message(self.chat_id, text,reply_markup=self.markup, parse_mode="Markdown")
 
             # Tracking feedback request ID
@@ -574,7 +586,7 @@ class TeleBot:
         response = requests.post(self.parser_url, body)
         response = response.json()
 
-        cond1 = float(response['intent']['confidence']) >= 0.5
+        cond1 = float(response['intent']['confidence']) >= 0.8
         cond2 = response['intent']['name'] == 'event_notification'
         if cond1 and cond2:
             return True

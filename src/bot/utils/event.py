@@ -15,7 +15,10 @@ class Event:
             'date': None,
             'time':None,
         }
+
+        self.req_entity = None
         
+        self.valid = False
   
 
     def is_details_complete(self):
@@ -50,6 +53,7 @@ class Event:
 
         for event_key in self.details:
             if self.details[event_key] is None:
+                self.req_entity = event_key
                 return event_key
         return None     
     
@@ -63,3 +67,64 @@ class Event:
         '''
 
         self.details[event_key] = event_value
+
+    def get_req_entity(self):
+        '''
+        This function returns the entity being currently processed
+
+        Parameters:
+        None
+        Return:
+        string : The entity being requested
+        '''
+
+        return self.req_entity
+
+    def is_prev_req_complete(self):
+        '''
+        This function checks if the current entity being 
+        processed has been collected
+        Parameters:
+        None
+        Return:
+        bool : Whether collected (True) or not (False)
+        '''
+
+        if self.req_entity is not None:
+            if self.details[self.req_entity] is None:
+                return False
+
+        
+        return True 
+    
+    def are_details_valid(self):
+        '''
+        This function returns if details are valid
+        Parameters:
+        None
+        Return:
+        bool : True if valid else False
+        '''
+
+        return self.valid
+    
+    def make_valid(self):
+        '''
+        This function sets valid to True
+        Parameters:
+        None
+        Return:
+        None
+        '''
+        self.valid = True
+    
+    def delete_entity(self, entity):
+        '''
+        This function deletes a entity
+        Parameter:
+        entity (string) : The entity to delete
+        Return:
+        None
+        '''
+
+        self.details[entity] = None

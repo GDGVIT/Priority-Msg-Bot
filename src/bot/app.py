@@ -5,7 +5,7 @@ import logging
 from dotenv import load_dotenv
 
 # Import utility classes
-from utils.bot import TeleBot
+from utils.bot2 import TeleBot
 
 
 # Configure logger
@@ -18,6 +18,7 @@ load_dotenv()
 
 bot_token = os.getenv('BOT_TOKEN')
 parser_url = os.getenv('PARSER_URL')
+encryption_key = os.getenv('ENCRYPTION_KEY')
 
 
 
@@ -26,5 +27,5 @@ resp = requests.get(parser_url[:-11])
 logging.info("NLU Engine Status : {}".format(resp.content))
 
 #Initializing instance of the bot
-argos = TeleBot(bot_token, parser_url)
+argos = TeleBot(bot_token, parser_url, encryption_key)
 argos.activate()
