@@ -367,9 +367,16 @@ class TeleBot:
                     # Storing the event to database
                     insert_query = """INSERT INTO events (chat_id, type, description, date, time) VALUES (%s, %s, %s, %s, %s);"""
 
+                    # Encrypt details
+                    logging.info("Encrypting event details")
+                    
+                    event_details['description'] = self.goblin.encrypt(event_details['description'])
+                    event_details['event_type'] = self.goblin.encrypt(event_details['event_type'])
+
                     record_to_insert = tuple([event_details[key] for key in event_details])
                     record_to_insert = (chat_id, )+record_to_insert
 
+                    logging.info("Inserting into database")
                     cursor.execute(insert_query, record_to_insert)
 
                     # Commit
@@ -382,11 +389,7 @@ class TeleBot:
                 except (Exception,psycopg2.Error) as error:
                     logging.info(error)
 
-                # # Send confirmation to user
-                # text = 'The details are \n'
-                # for event_key in event_details:
-                #     text+='\n '+'*'+event_key+'*'+' : '+event_details[event_key]
-                # text+='\n Stored sucessfully!'
+
                 text = "Event stored sucessully"
                 self.bot.send_message(chat_id, text, parse_mode='Markdown')
 
@@ -844,14 +847,17 @@ class TeleBot:
             
                 for row in records:
                     # Decrypt messages here
+                    event_type = self.goblin.decrypt(row[2])
+                    event_desc = self.goblin.decrypt(row[3])
 
-                    text = row[2] + " on *"+row[4]+"* at *"+row[5]+"*\n"+"_"+row[3]+"_"
+                    text = event_type + " on *"+row[4]+"* at *"+row[5]+"*\n"+"_"+event_desc+"_"
                     self.bot.send_message(chat_id,text,parse_mode="Markdown")
 
                 self.bot.send_message(chat_id, "That's all your stored messages")
             
             cursor.close()
             connection.close()
+            logging.info("Connection closed")
 
         except Exception as error:
             logging.info(error)
