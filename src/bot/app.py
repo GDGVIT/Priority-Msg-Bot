@@ -27,5 +27,5 @@ resp = requests.get(parser_url[:-11])
 logging.info("NLU Engine Status : {}".format(resp.content))
 
 #Initializing instance of the bot
-argos = TeleBot(bot_token, parser_url)
+argos = TeleBot(bot_token, parser_url, encryption_key)
 argos.activate()

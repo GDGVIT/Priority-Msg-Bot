@@ -40,7 +40,7 @@ class TeleBot:
         logging.info("URL parser set : {}".format(self.parser_url))
 
         # Initialize Goblin
-        self.goblin = Goblin(bytes(encryption_key, encoding='utf-8')
+        self.goblin = Goblin(bytes(encryption_key, encoding='utf-8'))
         logging.info("Goblin initialized")
 
         self.markup = self.gen_markup()
