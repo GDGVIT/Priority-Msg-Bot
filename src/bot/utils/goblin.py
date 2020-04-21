@@ -1,3 +1,5 @@
+from cryptography.fernet import Fernet
+
 class Goblin:
   '''
   This is a class used to for message encryption
