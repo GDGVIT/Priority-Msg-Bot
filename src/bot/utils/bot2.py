@@ -239,7 +239,16 @@ class TeleBot:
                                 if item['entity'] == entity:
 
                                     if entity == 'date':
-                                        pass
+
+                                        # Convert to datetime
+                                        date_format = '%d/%m/%y'
+                                        date_object = datetime.strptime(item['value'], date_format)\
+                                        
+                                        # Get date string
+                                        date_string = self.get_date_string(date_object)
+                                        event.add_event_detail(entity, date_string)
+                                        entity_extracted = True
+
                                     else:
                                         event.add_event_detail(entity, item['value'])
                                         entity_extracted = True
@@ -248,10 +257,11 @@ class TeleBot:
                                 # Use some more extractors
 
                                 if entity == 'date':
-                                    date = self.extract_date(message.text)
+                                    date_object = self.extract_date(message.text)
                                     if date is not None:
                                         entity_extracted = True
-                                        event.add_event_detail(entity, date)
+                                        date_string = self.get_date_string(date_object)
+                                        event.add_event_detail(entity, date_string)
                                 
                                 # If it is still not being recognized
                                 if entity_extracted is False:
@@ -581,7 +591,6 @@ class TeleBot:
             if connection:
                 connection.close()
                         
-        
     def generate_brick(self):
         '''
         This function generates a dictionary 
