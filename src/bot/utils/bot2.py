@@ -237,8 +237,12 @@ class TeleBot:
 
                             for item in response['entities']:
                                 if item['entity'] == entity:
-                                    event.add_event_detail(entity, item['value'])
-                                    entity_extracted = True
+
+                                    if entity == 'date':
+                                        pass
+                                    else:
+                                        event.add_event_detail(entity, item['value'])
+                                        entity_extracted = True
                             
                             if entity_extracted is False:
                                 # Use some more extractors
@@ -817,13 +821,8 @@ class TeleBot:
         
             if date_object is None:
                 logging.info("Date couldn't be extracted")
-                return None
-            else:
-                date = str(date_object.day)+'/'
-                date+= str(date_object.month)+'/'           
-                date+= str(date_object.year)
-                return date
-            
+            return date_object
+
     def send_stored_messages(self, chat_id):
         '''
         This function fetches stored messages from 
