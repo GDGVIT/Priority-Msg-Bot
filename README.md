@@ -36,7 +36,7 @@ Dont believe us? Add this bot duo to your group and test them out!
 
 [Click here to see how to use the bot](docs/usage.md)
 
-[Click here to see how to install this bot in your computer](docs/installation.md)
+[Click here to see how to install this bot on your computer](docs/installation.md)
 
 
 
