@@ -8,6 +8,7 @@ import requests
 import psycopg2
 import datefinder
 from datetime import datetime
+from datetime import timedelta
 from tsresolve import point_of_time
 from telebot import types
 
@@ -839,8 +840,12 @@ class TeleBot:
         try:
             connection = self.get_connection()
             cursor = connection.cursor()
-            # Replace
+            
+            cur_date = self.get_date_string(datetime.now())
+            next_date = self.get_date_string(datetime.now() + timedelta(days=4)) 
+
             select_query = "SELECT * FROM events WHERE chat_id="+str(chat_id)
+            select_query += " and date between '"+cur_date+"' and '"+next_date+"' ;"
             
             logging.info("Querying from database")
             cursor.execute(select_query)
