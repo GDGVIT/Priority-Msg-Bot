@@ -1,0 +1,50 @@
+Hi there 👋,  I am priority message bot (need  catchy name) 
+
+And I can help you make sure that you never miss an important message in your group chat
+
+Please 🙏 read the description of how the bot works before proceeding
+
+<b> What does the bot do?</b>
+
+- The bot can detect any important messge like 
+
+<b>there is project review next week</b> 
+
+or <b>we have to submit DA on friday</b> and keep a track of them
+
+<b>How can I see these tracked messages</b>
+
+- Use the /show command to list all the important
+messages that the bot detected. 
+
+Additionaly you can also set reminders for these important events
+
+<b>How to set the reminder</b>
+
+- While viewing the tracked messages using /show
+the bot gives you the option to store the event
+
+You need to additionaly provide date and time
+
+and our bot will send a recurring reminder from 
+3 days before the deadline
+
+<b>Are my reminders safe with the bot?</b>
+
+- Absolutely! The bot encrypts all the messages
+before storing them 💪
+
+<b>How to check reminders on my own</b>
+
+- /remind command will list down all the events
+due in the next three days
+
+<b>Here is a list of commands:</b>
+
+/start : You can use this function to check if bot is active in your group
+
+/show :  Shows all the important messages that were detected in the coversation
+
+/remind : Reminds you of any events that are scheduled to occur in next 3 days
+
+/help : To know details on how to use the bot

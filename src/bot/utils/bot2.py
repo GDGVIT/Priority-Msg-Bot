@@ -140,6 +140,19 @@ class TeleBot:
 
             # Retrieve and send all the message
             self.send_stored_messages(message.chat.id)
+        
+        @self.bot.message_handler(commands=['help'])
+        def help(message):
+            '''
+            This function shows help message
+            Parameters:
+            message (dictionary) : Message object returned by telegram
+            Return:
+            None
+            '''
+
+            # Send help message
+            self.send_help_message(message.chat.id)
 
         
         @self.bot.message_handler(commands=['show'])
@@ -890,3 +903,16 @@ class TeleBot:
         date_string += str(date_object.day)
 
         return date_string
+
+    def send_help_message(self, chat_id):
+        '''
+        This function sends the help message
+        Parameters:
+        chat_id (int) : The Telegram group ID
+        Return:
+        None
+        '''
+        help_file = open("./utils/help_message.txt", "r", encoding='utf-8')
+        help_message = help_file.read()
+
+        self.bot.send_message(chat_id, help_message, parse_mode="HTML")
