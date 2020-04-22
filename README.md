@@ -10,14 +10,24 @@
   
 ## Description
 
+### Getting notifed about important messages
+
 Have you ever scrolled through 500 messages on a group chat to look for that one message notifying members about a very important project deadline that week or a message about an important meeting. 
 
-Its frustrating trying to find the needle in the haystack, don't fret, we at DSC understand your woes, we have been there and done that. That's why we came up with Priority Message Bot, a contextual AI powered bot which will analyze the conversation in a telegram group in real time and keep track of all messages which might be important
+Its frustrating trying to find the needle in the haystack, don't fret, we at DSC understand your woes, we have been there and done that. That's why we came up with **Priority Message Bot**, a contextual AI powered bot which will analyze the conversation in a telegram group in real time and keep track of all messages which might be important
 
 And all that you have to do is ask the bot to show all those messages. Its that simple
 Use this bot and never miss another important message in your telegram group
 
-Dont beleive us? Add this bot duo to your group and test them out!
+### Get reminders about events 
+
+Our Priority message bot not only detects and list the important messages for you, It can also send you recurring reminders 
+well in advance.If an important event is detected by the bot and you would like to be reminder about it, just tell the bot to store the message.
+
+The bot will ask you some additional details like date and time, and safely store them. And starting from 3 days before the deadline our **Reminder bot** will send recurring reminders to the telegram group
+
+
+Dont believe us? Add this bot duo to your group and test them out!
 
 ## Functionalities
 - [X]  Detect and track important messages
