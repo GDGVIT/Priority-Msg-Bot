@@ -78,6 +78,10 @@ class TeleBot:
 
                 # Then call form action
                 self.form_action(call.message.chat.id)
+            
+            elif call.data == "storent":
+                # Ignore and move to next message
+                self.send_tracked_message(call.message.chat.id)
 
             elif call.data == "edit":
                 # Edit message to show menu
@@ -507,7 +511,7 @@ class TeleBot:
             # and send message
             text = item['event_type']+" detected \n"
             text += '_'+item['text']+'_'+' \n'
-            text += 'Store this?'
+            text += 'Set a reminder for this?'
 
             sent_message = self.bot.send_message(chat_id, text, 
                 reply_markup=self.markup, 
@@ -657,9 +661,10 @@ class TeleBot:
         logging.info("Markup being generated")
         
         markup = types.InlineKeyboardMarkup()
-        markup.row_width = 1
-        markup.add(types.InlineKeyboardButton("Edit some details", callback_data="edit"),
-                    types.InlineKeyboardButton("Store the event", callback_data="store"))
+        markup.row_width = 2
+        markup.add(types.InlineKeyboardButton("Set Reminder", callback_data="store"),
+                    types.InlineKeyboardButton("Dont set reminder", callback_data="storent"),
+                    types.InlineKeyboardButton("Edit some details", callback_data="edit"))
         
         return markup
 
