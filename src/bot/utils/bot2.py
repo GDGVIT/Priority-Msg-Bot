@@ -856,8 +856,9 @@ class TeleBot:
                     # Decrypt messages here
                     event_type = self.goblin.decrypt(row[2])
                     event_desc = self.goblin.decrypt(row[3])
+                    date_string = self.get_date_string(row[4])
 
-                    text = event_type + " on *"+row[4]+"* at *"+row[5]+"*\n"+"_"+event_desc+"_"
+                    text = event_type + " on *"+date_string+"* at *"+row[5]+"*\n"+"_"+event_desc+"_"
                     self.bot.send_message(chat_id,text,parse_mode="Markdown")
 
                 self.bot.send_message(chat_id, "That's all your stored messages")
