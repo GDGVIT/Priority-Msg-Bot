@@ -8,7 +8,16 @@
 [![DOCS](https://img.shields.io/badge/license%20-MIT-green?style=flat-square&logo=appveyor)]() 
   [![UI ](https://img.shields.io/badge/built%20using%20-Python-green?style=flat-square&logo=appveyor)]()
   
+## Description
 
+Have you ever scrolled through 500 messages on a group chat to look for that one message notifying members about a very important project deadline that week or a message about an important meeting. 
+
+Its frustrating trying to find the needle in the haystack, don't fret, we at DSC understand your woes, we have been there and done that. That's why we came up with Priority Message Bot, a contextual AI powered bot which will analyze the conversation in a telegram group in real time and keep track of all messages which might be important
+
+And all that you have to do is ask the bot to show all those messages. Its that simple
+Use this bot and never miss another important message in your telegram group
+
+Dont beleive us? Go ahead and check out how this bot works 
 ## Functionalities
 - [X]  Detect and track important messages
 - [X]  List tracked messages on command
@@ -41,6 +50,12 @@ cd path/to/cloned/repo/src/bot
 docker build -t bot:1.0 .
 ```
 
+3) Build Docker image for the reminder telegram bot
+
+```
+cd path/to/cloned/repo/src/reminder_bot
+docker build -t reminderBot:1.0 .
+```
 
 3) Don't forget to add .env file in your telegram bot folder\
    Refer to **Instructions to execute** given below for the .env file sample
@@ -51,6 +66,7 @@ docker build -t bot:1.0 .
 ```
 docker run --rm backend:1.0 -p 5000:5000
 docker run --rm bot:1.0
+docker run --rm reminderBot:1.0
 ```
 
 If you don't have Docker or want to tinker around with the code \
@@ -63,10 +79,11 @@ Refer to the intructions below to install dependencies and run the application
 	-  Python >= 3.5
 	-  Dependencies from requirements.txt for NLP backend and Telegram bot.
 
-There are two components that need to be installed and run
+There are three components that need to be installed and run
 
 1. The Rasa backend API which is used for NLP
-2. Python script for the Telegram bot
+2. Python script for the Priority message bot
+3. Python script for the reminder bot
 
 Clone the repository
 Create a virtual environment and activate it
@@ -84,6 +101,8 @@ pip install -r requirements.txt
 ```
 
 Install dependencies for Telegram Bot API
+The requirements for priority message bot cover the \
+requirements for reminder bot
 
 ```bash
 cd src/bot
@@ -117,7 +136,7 @@ cd src/backend
 rasa run --enable-api
 ```
 
-### 2. Setting Up And Running Telegram Bot
+### 2. Setting Up And Running Telegram Bots
 
 Create a .env file in bot folder and add your credentials\
 Refer to the .env file sample
@@ -135,6 +154,13 @@ cd src/bot
 python3 -m app.py
 ```
 
+3. Also run the bot script for reminder bot
+
+```bash
+cd src/reminder_bot
+python3 -m app.py
+```
+
 ## Directions To Use
 
 Add the telegram bot to your group\
@@ -147,7 +173,7 @@ This command makes the bot list all important messages being tracked
 
 2. /remind
 
-This command makes the  bot list all the important messages that are being stored
+This command makes the  bot list all the important events that will occur in the next 3 days
 
 <br>
 
