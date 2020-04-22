@@ -258,7 +258,7 @@ class TeleBot:
 
                                 if entity == 'date':
                                     date_object = self.extract_date(message.text)
-                                    if date is not None:
+                                    if date_object is not None:
                                         entity_extracted = True
                                         date_string = self.get_date_string(date_object)
                                         event.add_event_detail(entity, date_string)
@@ -880,8 +880,8 @@ class TeleBot:
         string : Date in form "dd/mm/yyyy"
         '''
 
-        date_string = date_object.year + '-'
-        date_string += date_object.month + '-'
-        date_string += date_object.day
+        date_string = str(date_object.year) + '-'
+        date_string += str(date_object.month) + '-'
+        date_string += str(date_object.day)
 
         return date_string
