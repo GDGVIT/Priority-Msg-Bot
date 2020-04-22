@@ -8,15 +8,18 @@
 [![DOCS](https://img.shields.io/badge/license%20-MIT-green?style=flat-square&logo=appveyor)]() 
   [![UI ](https://img.shields.io/badge/built%20using%20-Python-green?style=flat-square&logo=appveyor)]()
   
+
+Have you ever scrolled through 500 messages on a group chat  😫 to look for that one message notifying members about a very important project deadline that week or a message about an important meeting.
+
+We can help you, please 🙏 read the description to know how  
+
 ## Description
 
 ### Getting notifed about important messages
 
-Have you ever scrolled through 500 messages on a group chat to look for that one message notifying members about a very important project deadline that week or a message about an important meeting. 
+Its frustrating trying to find the needle in the haystack, don't fret 💪, we at DSC VIT understand your woes, we have been there and done that. That's why we came up with **Priority Message Bot**, a contextual AI powered bot 😎 which will analyze the conversation in a telegram group in real time and keep track of all messages which might be important
 
-Its frustrating trying to find the needle in the haystack, don't fret, we at DSC understand your woes, we have been there and done that. That's why we came up with **Priority Message Bot**, a contextual AI powered bot which will analyze the conversation in a telegram group in real time and keep track of all messages which might be important
-
-And all that you have to do is ask the bot to show all those messages. Its that simple
+And all that you have to do is ask the bot to show all those messages. Its that simple 🤘
 Use this bot and never miss another important message in your telegram group
 
 ### Get reminders about events 
