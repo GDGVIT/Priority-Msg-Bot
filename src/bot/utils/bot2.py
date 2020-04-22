@@ -280,7 +280,6 @@ class TeleBot:
         self.bot.edit_message_text(chat_id=chat_id, message_id=message_id,text=text,
                          reply_markup=markup, parse_mode="Markdown")
 
-
     def graceful_fail(self, chat_id):
         '''
         This function handles unrecognised input
@@ -860,3 +859,19 @@ class TeleBot:
 
         except Exception as error:
             logging.info(error)
+
+    def get_date_string(self, date_object):
+        '''
+        This function returns a string representation
+        of a datetime object
+        Parameters:
+        date_object (datetime): The date extracted from message
+        Return:
+        string : Date in form "dd/mm/yyyy"
+        '''
+
+        date_string = date_object.year + '-'
+        date_string += date_object.month + '-'
+        date_string += date_object.day
+
+        return date_string
