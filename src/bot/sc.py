@@ -142,7 +142,7 @@ if __name__ == "__main__":
     bot = TeleBot(bot_token, encryption_key)
 
 
-    schedule.every().minute.at(":10").do(bot.scheduled_send)
+    schedule.every().day.at("6:00").do(bot.scheduled_send)
 
     while True:
         schedule.run_pending()
