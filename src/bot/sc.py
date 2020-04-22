@@ -104,20 +104,25 @@ class TeleBot:
                 text = event_type + " on *"+date_string+"* at *"+row[5]+"*\n"+"_"+event_desc+"_"
                 self.bot.send_message(row[1],text,parse_mode="Markdown")
             
-            cursor.close()
-            connection.close()
+
 
         except Exception as error:
             logging.info(error)
         
         finally:
-            print("finally")
-            # Delete all expired reminders
+            # Delete all expired messages
+            cur_date = self.get_date_string(datetime.now())
 
-def job():
-    print("Hey mofo")
+            delete_query = "DELETE FROM events WHERE "
+            delete_query += " date < '"+cur+"' ;"
 
+            logging.info("Deleting expired messages")
+            cursor.execute(delete_query)
 
+            cursor.close()
+            connection.close()
+           
+    
 
 
 if __name__ == "__main__":
@@ -136,13 +141,12 @@ if __name__ == "__main__":
 
     bot = TeleBot(bot_token, encryption_key)
 
-    bot.scheduled_send()
 
-    #schedule.every().minute.at(":10").do(job)
+    schedule.every().minute.at(":10").do(bot.scheduled_send)
 
-    # while True:
-    #     schedule.run_pending()
-    #     time.sleep(1)  
+    while True:
+        schedule.run_pending()
+        time.sleep(1)  
 
 
 
