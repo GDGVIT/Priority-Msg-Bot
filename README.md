@@ -29,6 +29,14 @@ The bot will ask you some additional details like date and time, and safely stor
 
 Dont believe us? Add this bot duo to your group and test them out!
 
+## Usage and Installation
+
+[Click here to see how to use the bot](docs/usage.md)
+
+[Click here to see how to install this bot in your computer](docs/installation.md)
+
+
+
 ## Functionalities
 - [X]  Detect and track important messages
 - [X]  List tracked messages on command
@@ -36,6 +44,7 @@ Dont believe us? Add this bot duo to your group and test them out!
 - [X]  Send reminders well in advance before deadlines
 
 <br>
+
 
 
 ## Directions To Use
