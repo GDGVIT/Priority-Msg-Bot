@@ -1,5 +1,7 @@
 ## Usage
 
+First of all, to use this bot duo, you need to add them to your telegram group
+
 **What kind of messages does the bot detect?**
 
 Messages which notify the user about important events/projects/deadlines etc
