@@ -52,8 +52,8 @@ Dont believe us? Add this bot duo to your group and test them out!
 
 ## Directions To Use
 
-Add the telegram bot to your group\
-It is necessary to make the bot admin of the group.
+Add the Priority Message Bot and Reminder Bot to your group
+
 Use the following commands to communicate with the bot
 
 1. /show
