@@ -25,7 +25,7 @@ Use this bot and never miss another important message in your telegram group
 ### Get reminders about events 
 
 Our Priority message bot not only detects and list the important messages for you, It can also send you recurring reminders 
-well in advance.If an important event is detected by the bot and you would like to be reminder about it, just tell the bot to store the message.
+well in advance.If an important event is detected by the bot and you would like to be reminded about it, just tell the bot to store the message.
 
 The bot will ask you some additional details like date and time, and safely store them. And starting from 3 days before the deadline our **Reminder bot** will send recurring reminders to the telegram group
 
@@ -44,7 +44,7 @@ Dont believe us? Add this bot duo to your group and test them out!
 - [X]  Detect and track important messages
 - [X]  List tracked messages on command
 - [X]  Add reminders for important events
-- [X]  Send reminders well in advance before deadlines
+- [X]  Get reminders well in advance before deadlines
 
 <br>
 
