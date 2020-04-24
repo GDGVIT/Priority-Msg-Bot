@@ -1,0 +1,6 @@
+cryptography==2.9
+requests==2.23.0
+psycopg2_binary==2.8.5
+psycopg2==2.8.5
+pyTelegramBotAPI==3.6.7
+python-dotenv==0.13.0

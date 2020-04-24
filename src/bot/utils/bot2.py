@@ -8,6 +8,7 @@ import requests
 import psycopg2
 import datefinder
 from datetime import datetime
+from datetime import timedelta
 from tsresolve import point_of_time
 from telebot import types
 
@@ -77,6 +78,10 @@ class TeleBot:
 
                 # Then call form action
                 self.form_action(call.message.chat.id)
+            
+            elif call.data == "storent":
+                # Ignore and move to next message
+                self.send_tracked_message(call.message.chat.id)
 
             elif call.data == "edit":
                 # Edit message to show menu
@@ -139,6 +144,19 @@ class TeleBot:
 
             # Retrieve and send all the message
             self.send_stored_messages(message.chat.id)
+        
+        @self.bot.message_handler(commands=['help'])
+        def help(message):
+            '''
+            This function shows help message
+            Parameters:
+            message (dictionary) : Message object returned by telegram
+            Return:
+            None
+            '''
+
+            # Send help message
+            self.send_help_message(message.chat.id)
 
         
         @self.bot.message_handler(commands=['show'])
@@ -237,17 +255,31 @@ class TeleBot:
 
                             for item in response['entities']:
                                 if item['entity'] == entity:
-                                    event.add_event_detail(entity, item['value'])
-                                    entity_extracted = True
+
+                                    if entity == 'date':
+
+                                        # Convert to datetime
+                                        date_format = '%d/%m/%y'
+                                        date_object = datetime.strptime(item['value'], date_format)\
+                                        
+                                        # Get date string
+                                        date_string = self.get_date_string(date_object)
+                                        event.add_event_detail(entity, date_string)
+                                        entity_extracted = True
+
+                                    else:
+                                        event.add_event_detail(entity, item['value'])
+                                        entity_extracted = True
                             
                             if entity_extracted is False:
                                 # Use some more extractors
 
                                 if entity == 'date':
-                                    date = self.extract_date(message.text)
-                                    if date is not None:
+                                    date_object = self.extract_date(message.text)
+                                    if date_object is not None:
                                         entity_extracted = True
-                                        event.add_event_detail(entity, date)
+                                        date_string = self.get_date_string(date_object)
+                                        event.add_event_detail(entity, date_string)
                                 
                                 # If it is still not being recognized
                                 if entity_extracted is False:
@@ -275,7 +307,6 @@ class TeleBot:
 
         self.bot.edit_message_text(chat_id=chat_id, message_id=message_id,text=text,
                          reply_markup=markup, parse_mode="Markdown")
-
 
     def graceful_fail(self, chat_id):
         '''
@@ -480,7 +511,7 @@ class TeleBot:
             # and send message
             text = item['event_type']+" detected \n"
             text += '_'+item['text']+'_'+' \n'
-            text += 'Store this?'
+            text += 'Set a reminder for this?'
 
             sent_message = self.bot.send_message(chat_id, text, 
                 reply_markup=self.markup, 
@@ -578,7 +609,6 @@ class TeleBot:
             if connection:
                 connection.close()
                         
-        
     def generate_brick(self):
         '''
         This function generates a dictionary 
@@ -631,9 +661,10 @@ class TeleBot:
         logging.info("Markup being generated")
         
         markup = types.InlineKeyboardMarkup()
-        markup.row_width = 1
-        markup.add(types.InlineKeyboardButton("Edit some details", callback_data="edit"),
-                    types.InlineKeyboardButton("Store the event", callback_data="store"))
+        markup.row_width = 2
+        markup.add(types.InlineKeyboardButton("Set Reminder", callback_data="store"),
+                    types.InlineKeyboardButton("Dont set reminder", callback_data="storent"),
+                    types.InlineKeyboardButton("Edit some details", callback_data="edit"))
         
         return markup
 
@@ -817,13 +848,8 @@ class TeleBot:
         
             if date_object is None:
                 logging.info("Date couldn't be extracted")
-                return None
-            else:
-                date = str(date_object.day)+'/'
-                date+= str(date_object.month)+'/'           
-                date+= str(date_object.year)
-                return date
-            
+            return date_object
+
     def send_stored_messages(self, chat_id):
         '''
         This function fetches stored messages from 
@@ -832,8 +858,12 @@ class TeleBot:
         try:
             connection = self.get_connection()
             cursor = connection.cursor()
-            # Replace
+            
+            cur_date = self.get_date_string(datetime.now())
+            next_date = self.get_date_string(datetime.now() + timedelta(days=4)) 
+
             select_query = "SELECT * FROM events WHERE chat_id="+str(chat_id)
+            select_query += " and date between '"+cur_date+"' and '"+next_date+"' ;"
             
             logging.info("Querying from database")
             cursor.execute(select_query)
@@ -849,8 +879,9 @@ class TeleBot:
                     # Decrypt messages here
                     event_type = self.goblin.decrypt(row[2])
                     event_desc = self.goblin.decrypt(row[3])
+                    date_string = self.get_date_string(row[4])
 
-                    text = event_type + " on *"+row[4]+"* at *"+row[5]+"*\n"+"_"+event_desc+"_"
+                    text = event_type + " on *"+date_string+"* at *"+row[5]+"*\n"+"_"+event_desc+"_"
                     self.bot.send_message(chat_id,text,parse_mode="Markdown")
 
                 self.bot.send_message(chat_id, "That's all your stored messages")
@@ -861,3 +892,32 @@ class TeleBot:
 
         except Exception as error:
             logging.info(error)
+
+    def get_date_string(self, date_object):
+        '''
+        This function returns a string representation
+        of a datetime object
+        Parameters:
+        date_object (datetime): The date extracted from message
+        Return:
+        string : Date in form "dd/mm/yyyy"
+        '''
+
+        date_string = str(date_object.year) + '-'
+        date_string += str(date_object.month) + '-'
+        date_string += str(date_object.day)
+
+        return date_string
+
+    def send_help_message(self, chat_id):
+        '''
+        This function sends the help message
+        Parameters:
+        chat_id (int) : The Telegram group ID
+        Return:
+        None
+        '''
+        help_file = open("./utils/help_message.txt", "r", encoding='utf-8')
+        help_message = help_file.read()
+
+        self.bot.send_message(chat_id, help_message, parse_mode="HTML")
