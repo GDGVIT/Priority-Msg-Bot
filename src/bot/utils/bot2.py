@@ -61,8 +61,6 @@ class TeleBot:
         '''       
         
         @self.bot.callback_query_handler(func=lambda call: True)
-        
-        
         def callback_query(call):
             logging.info("Callback triggered")
             
@@ -260,13 +258,18 @@ class TeleBot:
 
                                         # Convert to datetime
                                         date_format = '%d/%m/%y'
-                                        date_object = datetime.strptime(item['value'], date_format)\
-                                        
-                                        # Get date string
-                                        date_string = self.get_date_string(date_object)
-                                        event.add_event_detail(entity, date_string)
-                                        entity_extracted = True
+                                        date_object = None
 
+                                        # Try and ecxept the bug where NER returns days as date
+                                        try:
+                                            date_object = datetime.strptime(item['value'], date_format)
+                                            # Get date string
+                                            date_string = self.get_date_string(date_object)
+                                            event.add_event_detail(entity, date_string)
+                                            entity_extracted = True
+                                        except Exception as error:
+                                            logging.info(error)
+                                            
                                     else:
                                         event.add_event_detail(entity, item['value'])
                                         entity_extracted = True
@@ -421,7 +424,7 @@ class TeleBot:
                     logging.info(error)
 
 
-                text = "Event stored sucessully"
+                text = "Reminder set sucessully"
                 self.bot.send_message(chat_id, text, parse_mode='Markdown')
 
                 # Clear the menu dictionary
@@ -871,7 +874,7 @@ class TeleBot:
             records = cursor.fetchall()
             
             if len(records) == 0:
-                self.bot.send_message(chat_id, "There were no stored messages")
+                self.bot.send_message(chat_id, "There were no reminders")
             
             else:
             
@@ -884,7 +887,7 @@ class TeleBot:
                     text = event_type + " on *"+date_string+"* at *"+row[5]+"*\n"+"_"+event_desc+"_"
                     self.bot.send_message(chat_id,text,parse_mode="Markdown")
 
-                self.bot.send_message(chat_id, "That's all your stored messages")
+                self.bot.send_message(chat_id, "You are all caught up :)")
             
             cursor.close()
             connection.close()
