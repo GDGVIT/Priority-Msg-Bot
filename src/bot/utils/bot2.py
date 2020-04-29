@@ -284,6 +284,12 @@ class TeleBot:
                                         date_string = self.get_date_string(date_object)
                                         event.add_event_detail(entity, date_string)
                                 
+                                elif entity  == 'time':
+                                    time_string = self.extract_time(message.text)
+                                    if time_string is not None:
+                                        entity_extracted = True
+                                        event.add_event_detail(entity, time_string)
+                                
                                 # If it is still not being recognized
                                 if entity_extracted is False:
                                     self.graceful_fail(message.chat.id)
@@ -338,7 +344,7 @@ class TeleBot:
         
         elif entity == 'time':
             text = "Couldn't understand the time \n"
-            text += "Please enter in format like *9am*"
+            text += "Please enter in 24 hour format like *HH:MM*"
         
         self.bot.send_message(chat_id, text, parse_mode="Markdown")
 
@@ -802,7 +808,7 @@ class TeleBot:
         response = requests.post(self.parser_url, body)
         response = response.json()
 
-        cond1 = float(response['intent']['confidence']) >= 0.8
+        cond1 = float(response['intent']['confidence']) >= 0.70
         cond2 = response['intent']['name'] == 'event_notification'
         if cond1 and cond2:
             return True
@@ -852,6 +858,49 @@ class TeleBot:
             if date_object is None:
                 logging.info("Date couldn't be extracted")
             return date_object
+
+    def extract_time(self, text):
+        '''
+        This function extracts time from the text
+        Parameters:
+        text (string): User's reply which contains time
+        '''
+        
+        # Parse date and time from string
+        date_string = point_of_time(text)[0]
+        
+        # If parsed successfully
+        if date_string is not None:
+            
+            # Get the time part from the string
+            date_string = date_string.split('T')[1]
+            
+            # Form a datetime object 
+            date_format =  '%H:%M:%S'
+            date_object = datetime.strptime(date_string, date_format)
+            
+            # If able to form the datetime object
+            # which should be always possible
+            if date_object is not None:
+                # Get hour and minute
+                clock = 'am'
+                hour = int(date_object.hour)
+                mins = int(date_object.minute)
+                
+                # Check whether am or pm
+                if hour>=12:
+                    clock = 'pm'
+                    
+                    # Convert hour to 12 hour format
+                    hour = hour-12 if hour != 12 else hour
+                
+                # Return time string
+                time_string = str(hour)+":"+str(mins)+clock
+                return time_string
+                
+                
+        return None
+
 
     def send_stored_messages(self, chat_id):
         '''
