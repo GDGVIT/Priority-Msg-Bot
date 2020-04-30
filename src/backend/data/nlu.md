@@ -66,9 +66,14 @@
 - there is a [meeting](event) tonight
 - there is a [party](event) tonight
 - there is a [meeting](event) today
+- i have a [meeting](event) tonight
+- i have a [party](event) tonight
+- i have a [meeting](event) today
 - there will be a session today
 - there is a [party](event) today
 - there is a [meeting](event) in the afternoon
+- i have a [party](event) today
+- i have a [meeting](event) in the afternoon
 - in the afternoon we will have a [meeting](event)
 - lets have a [meetup](event) in evening
 - lets [meetup](event) in the library
@@ -79,6 +84,9 @@
 - there is a [party](event) next Tuesday
 - there is a [meeting](event) this Monday
 - there is a [meeting](event) next wednesday
+- i have a [party](event) next Tuesday
+- i have a [meeting](event) this Monday
+- i have a [meeting](event) next wednesday
 - lets [meetup](event) next Sunday
 - lets plan a [party](event) next weekend
 - we will have a [party](event) next week
@@ -112,6 +120,8 @@
 - remind me about this [assignment](event)
 - remind me about this [project](event)
 - hey, remind me about this [thing](event)
+- i have a [digital assignment](event) next week
+- i have a [digital assignment](event) coming up
 
 ## intent:inform_event
 - its a [meeting](event)

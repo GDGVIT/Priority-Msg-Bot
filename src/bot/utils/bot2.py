@@ -61,8 +61,6 @@ class TeleBot:
         '''       
         
         @self.bot.callback_query_handler(func=lambda call: True)
-        
-        
         def callback_query(call):
             logging.info("Callback triggered")
             
@@ -260,13 +258,18 @@ class TeleBot:
 
                                         # Convert to datetime
                                         date_format = '%d/%m/%y'
-                                        date_object = datetime.strptime(item['value'], date_format)\
-                                        
-                                        # Get date string
-                                        date_string = self.get_date_string(date_object)
-                                        event.add_event_detail(entity, date_string)
-                                        entity_extracted = True
+                                        date_object = None
 
+                                        # Try and ecxept the bug where NER returns days as date
+                                        try:
+                                            date_object = datetime.strptime(item['value'], date_format)
+                                            # Get date string
+                                            date_string = self.get_date_string(date_object)
+                                            event.add_event_detail(entity, date_string)
+                                            entity_extracted = True
+                                        except Exception as error:
+                                            logging.info(error)
+                                            
                                     else:
                                         event.add_event_detail(entity, item['value'])
                                         entity_extracted = True
@@ -280,6 +283,12 @@ class TeleBot:
                                         entity_extracted = True
                                         date_string = self.get_date_string(date_object)
                                         event.add_event_detail(entity, date_string)
+                                
+                                elif entity  == 'time':
+                                    time_string = self.extract_time(message.text)
+                                    if time_string is not None:
+                                        entity_extracted = True
+                                        event.add_event_detail(entity, time_string)
                                 
                                 # If it is still not being recognized
                                 if entity_extracted is False:
@@ -335,7 +344,7 @@ class TeleBot:
         
         elif entity == 'time':
             text = "Couldn't understand the time \n"
-            text += "Please enter in format like *9am*"
+            text += "Please enter in 24 hour format like *HH:MM*"
         
         self.bot.send_message(chat_id, text, parse_mode="Markdown")
 
@@ -421,7 +430,7 @@ class TeleBot:
                     logging.info(error)
 
 
-                text = "Event stored sucessully"
+                text = "Reminder set sucessully"
                 self.bot.send_message(chat_id, text, parse_mode='Markdown')
 
                 # Clear the menu dictionary
@@ -799,7 +808,7 @@ class TeleBot:
         response = requests.post(self.parser_url, body)
         response = response.json()
 
-        cond1 = float(response['intent']['confidence']) >= 0.8
+        cond1 = float(response['intent']['confidence']) >= 0.70
         cond2 = response['intent']['name'] == 'event_notification'
         if cond1 and cond2:
             return True
@@ -850,6 +859,49 @@ class TeleBot:
                 logging.info("Date couldn't be extracted")
             return date_object
 
+    def extract_time(self, text):
+        '''
+        This function extracts time from the text
+        Parameters:
+        text (string): User's reply which contains time
+        '''
+        
+        # Parse date and time from string
+        date_string = point_of_time(text)[0]
+        
+        # If parsed successfully
+        if date_string is not None:
+            
+            # Get the time part from the string
+            date_string = date_string.split('T')[1]
+            
+            # Form a datetime object 
+            date_format =  '%H:%M:%S'
+            date_object = datetime.strptime(date_string, date_format)
+            
+            # If able to form the datetime object
+            # which should be always possible
+            if date_object is not None:
+                # Get hour and minute
+                clock = 'am'
+                hour = int(date_object.hour)
+                mins = int(date_object.minute)
+                
+                # Check whether am or pm
+                if hour>=12:
+                    clock = 'pm'
+                    
+                    # Convert hour to 12 hour format
+                    hour = hour-12 if hour != 12 else hour
+                
+                # Return time string
+                time_string = str(hour)+":"+str(mins)+clock
+                return time_string
+                
+                
+        return None
+
+
     def send_stored_messages(self, chat_id):
         '''
         This function fetches stored messages from 
@@ -871,7 +923,7 @@ class TeleBot:
             records = cursor.fetchall()
             
             if len(records) == 0:
-                self.bot.send_message(chat_id, "There were no stored messages")
+                self.bot.send_message(chat_id, "There were no reminders")
             
             else:
             
@@ -884,7 +936,7 @@ class TeleBot:
                     text = event_type + " on *"+date_string+"* at *"+row[5]+"*\n"+"_"+event_desc+"_"
                     self.bot.send_message(chat_id,text,parse_mode="Markdown")
 
-                self.bot.send_message(chat_id, "That's all your stored messages")
+                self.bot.send_message(chat_id, "You are all caught up :)")
             
             cursor.close()
             connection.close()
