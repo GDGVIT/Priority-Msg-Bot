@@ -34,7 +34,7 @@ class TeleBot:
         '''
 
         # Initialize bot
-        self.bot = telebot.TeleBot(token=bot_token, threaded=True)
+        self.bot = telebot.TeleBot(token=bot_token, threaded=False)
         
         # Rasa API endpoint
         self.parser_url = parser_url
@@ -71,45 +71,72 @@ class TeleBot:
                 self.process_feedback(call.message.chat.id, False)
 
             elif call.data == "store":
-                # Make details valid 
-                self.bricks[call.message.chat.id]['event'].make_valid()
 
-                # Then call form action
-                self.form_action(call.message.chat.id)
-            
+                try:
+                    # Make details valid 
+                    self.bricks[call.message.chat.id]['event'].make_valid()
+
+                    # Then call form action
+                    self.form_action(call.message.chat.id)
+
+                except Exception as error:
+                    logging.info(error)   
+
             elif call.data == "storent":
-                # Ignore and move to next message
-                self.send_tracked_message(call.message.chat.id)
+
+                try:
+                    # Ignore and move to next message
+                    self.send_tracked_message(call.message.chat.id)
+                except Exception as error:
+                    logging.info(error)
 
             elif call.data == "edit":
-                # Edit message to show menu
-                self.show_entity_menu(call.message.chat.id)
-            
-            elif call.data == "time":
-                # Delete exisiting time 
-                self.bricks[call.message.chat.id]['event'].delete_entity('time')
 
-                # Call form action
-                self.form_action(call.message.chat.id)
+                try:
+                    # Edit message to show menu
+                    self.show_entity_menu(call.message.chat.id)
+                except Exception as error:
+                    logging.info(error)
+
+            elif call.data == "time":
+
+                try:
+
+                    # Delete exisiting time 
+                    self.bricks[call.message.chat.id]['event'].delete_entity('time')
+
+                    # Call form action
+                    self.form_action(call.message.chat.id)
+                except Exception as error:
+                    logging.info(error)
 
             elif call.data == "date":
-                # Delete exisiting time 
-                self.bricks[call.message.chat.id]['event'].delete_entity('date')
 
-                # Call form action
-                self.form_action(call.message.chat.id)
-            
+                try:
+                    # Delete exisiting time 
+                    self.bricks[call.message.chat.id]['event'].delete_entity('date')
+
+                    # Call form action
+                    self.form_action(call.message.chat.id)
+
+                except Exception as error:
+                    logging.info(error)
+
             elif call.data == "back":
-                # Go back to prev menu
-                chat_id = call.message.chat.id
-                message_id = self.bricks[chat_id]['menu_msg']['id']
-                text = self.bricks[chat_id]['menu_msg']['text']
-                
-                markup = self.correctness_markup()
 
-                self.bot.edit_message_text(chat_id=chat_id,message_id=message_id,
-                                    text=text, reply_markup=markup,
-                                    parse_mode="Markdown")
+                try:
+                    # Go back to prev menu
+                    chat_id = call.message.chat.id
+                    message_id = self.bricks[chat_id]['menu_msg']['id']
+                    text = self.bricks[chat_id]['menu_msg']['text']
+                    
+                    markup = self.correctness_markup()
+
+                    self.bot.edit_message_text(chat_id=chat_id,message_id=message_id,
+                                        text=text, reply_markup=markup,
+                                        parse_mode="Markdown")
+                except Exception as error:
+                    logging.info(error)
 
         @self.bot.message_handler(commands=['start'])
         def send_welcome(message):

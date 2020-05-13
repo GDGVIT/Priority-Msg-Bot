@@ -1,5 +1,6 @@
 import os
 import time
+import requests
 import logging
 import schedule
 import telebot
@@ -122,7 +123,14 @@ class TeleBot:
             cursor.close()
             connection.close()
            
-    
+
+def send_caffeine():
+    '''
+    This function sends a request to Rasa server
+    to keep it awake
+    '''
+    resp = requests.get('http://pb-rasa.herokuapp.com/')
+    logging.info(resp.content)
 
 
 if __name__ == "__main__":
@@ -142,8 +150,8 @@ if __name__ == "__main__":
     bot = TeleBot(bot_token, encryption_key)
 
 
-    schedule.every().day.at("6:00").do(bot.scheduled_send)
-
+    schedule.every().day.at("10:00").do(bot.scheduled_send)
+    schedule.every(30).minutes.do(send_caffeine)
     while True:
         schedule.run_pending()
         time.sleep(1)  
