@@ -34,7 +34,7 @@ class TeleBot:
         '''
 
         # Initialize bot
-        self.bot = telebot.TeleBot(token=bot_token, threaded=True)
+        self.bot = telebot.TeleBot(token=bot_token, threaded=False)
         
         # Rasa API endpoint
         self.parser_url = parser_url

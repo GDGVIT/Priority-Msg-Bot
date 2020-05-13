@@ -129,7 +129,7 @@ def send_caffeine():
     This function sends a request to Rasa server
     to keep it awake
     '''
-    resp = requests.get('http://localhost:5005/')
+    resp = requests.get('http://pb-rasa.herokuapp.com/')
     logging.info(resp.content)
 
 
@@ -150,8 +150,8 @@ if __name__ == "__main__":
     bot = TeleBot(bot_token, encryption_key)
 
 
-    schedule.every().day.at("6:00").do(bot.scheduled_send)
-    schedule.every(10).minutes.do(send_caffeine)
+    schedule.every().day.at("10:00").do(bot.scheduled_send)
+    schedule.every(30).minutes.do(send_caffeine)
     while True:
         schedule.run_pending()
         time.sleep(1)  
