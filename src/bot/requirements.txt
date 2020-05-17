@@ -1,7 +1,9 @@
-cryptography==2.9
-tsresolve==0.6
-datefinder==0.7.0
 requests==2.23.0
+cryptography==2.1.4
 psycopg2_binary==2.8.5
-pyTelegramBotAPI==3.6.7
+datefinder==0.7.0
+fastai==1.0.61
+psycopg2-binary==2.8.5
+pyTelegramBotAPI==3.7.1
 python-dotenv==0.13.0
+tsresolve==0.6

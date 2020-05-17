@@ -17,7 +17,7 @@ logging.info("Loading the application")
 #TOKENS
 load_dotenv()
 
-parser_url = os.getenv('PARSER_URL')
+bot_token = os.getenv('BOT_TOKEN')
 encryption_key = os.getenv('ENCRYPTION_KEY')
 
 model = load_learner('./models/')
