@@ -10,3 +10,4 @@ src/test.ipynb
 src/.ipynb_checkpoints/
 src/bot/__pycache__/schedule.cpython-36.pyc
 src/reminder_bot/.env
+src/bot/models/export.pkl

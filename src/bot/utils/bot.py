@@ -1,23 +1,27 @@
-import time
-import telebot
-import json
 import re
 import os
 import time
+import json
+import telebot
+import logging
 import requests
 import psycopg2
-import logging
+import datefinder
+from datetime import datetime
+from datetime import timedelta
+from tsresolve import point_of_time
 from telebot import types
 
 # Import utility class
 from utils.event import Event
+from utils.goblin import Goblin
 
-class TeleBot:
+class TeleBot: 
     '''
     This is the class which initializes a telegram bot
     '''
 
-    def __init__(self, bot_token, parser_url):
+    def __init__(self, bot_token, model, encryption_key):
         '''
         The constructor for TeleBot class
 
@@ -29,51 +33,21 @@ class TeleBot:
         None
         '''
 
-
         # Initialize bot
         self.bot = telebot.TeleBot(token=bot_token, threaded=False)
-        
-        # Rasa API endpoint
-        self.parser_url = parser_url
-        logging.info("URL parser set : {}".format(self.parser_url))
 
-        # Track time to avoid deadlock
-        self.start = time.monotonic()
-        
-        # Tracker list to store event notification 
-        self.tracker = []
-        
-        # Chat ID of the chat
-        self.chat_id = None
+        # Set the inference model
+        self.model = model        
 
-        # Feedback request tracker
-        self.fb_req_id = 0
-
-        # Entity request tracker
-        self.ent_req_id = 0
-        
-        # Pointer for item
-        self.item_ptr = None
-
-        # Current object
-        self.event = None
-
-        # Current requested event key
-        self.event_key = None
+        # Initialize Goblin
+        self.goblin = Goblin(bytes(encryption_key, encoding='utf-8'))
+        logging.info("Goblin initialized")
 
         self.markup = self.gen_markup()
 
-        #self.connection = self.get_connection()
-
-        # if self.connection:
-        #     logging.info("Successfully connected to the database")
-        # else:
-        #     logging.info("Failed to connect to the database")
-
-        self.mutex = False
-        
-        
-
+        # Initialize a dictionary
+        self.bricks = {}
+    
     def activate(self):
         '''
         This function activates the bot and listens to messages
@@ -83,17 +57,85 @@ class TeleBot:
 
         Returns:
         None
-        '''
-
+        '''       
+        
         @self.bot.callback_query_handler(func=lambda call: True)
         def callback_query(call):
             logging.info("Callback triggered")
+            
             if call.data == "cb_yes":
-                #self.bot.answer_callback_query(call.id, "Answer is Yes")
-                self.process_feedback(True)
+                self.process_feedback(call.message.chat.id, True)
             elif call.data == "cb_no":
                 #self.bot.answer_callback_query(call.id, "Answer is No")
-                self.process_feedback(False)
+                self.process_feedback(call.message.chat.id, False)
+
+            elif call.data == "store":
+
+                try:
+                    # Make details valid 
+                    self.bricks[call.message.chat.id]['event'].make_valid()
+
+                    # Then call form action
+                    self.form_action(call.message.chat.id)
+
+                except Exception as error:
+                    logging.info(error)   
+
+            elif call.data == "storent":
+
+                try:
+                    # Ignore and move to next message
+                    self.send_tracked_message(call.message.chat.id)
+                except Exception as error:
+                    logging.info(error)
+
+            elif call.data == "edit":
+
+                try:
+                    # Edit message to show menu
+                    self.show_entity_menu(call.message.chat.id)
+                except Exception as error:
+                    logging.info(error)
+
+            elif call.data == "time":
+
+                try:
+
+                    # Delete exisiting time 
+                    self.bricks[call.message.chat.id]['event'].delete_entity('time')
+
+                    # Call form action
+                    self.form_action(call.message.chat.id)
+                except Exception as error:
+                    logging.info(error)
+
+            elif call.data == "date":
+
+                try:
+                    # Delete exisiting time 
+                    self.bricks[call.message.chat.id]['event'].delete_entity('date')
+
+                    # Call form action
+                    self.form_action(call.message.chat.id)
+
+                except Exception as error:
+                    logging.info(error)
+
+            elif call.data == "back":
+
+                try:
+                    # Go back to prev menu
+                    chat_id = call.message.chat.id
+                    message_id = self.bricks[chat_id]['menu_msg']['id']
+                    text = self.bricks[chat_id]['menu_msg']['text']
+                    
+                    markup = self.correctness_markup()
+
+                    self.bot.edit_message_text(chat_id=chat_id,message_id=message_id,
+                                        text=text, reply_markup=markup,
+                                        parse_mode="Markdown")
+                except Exception as error:
+                    logging.info(error)
 
         @self.bot.message_handler(commands=['start'])
         def send_welcome(message):
@@ -106,21 +148,45 @@ class TeleBot:
             Return:
             None
             '''
-            self.chat_id = message.chat.id
-            # Pass
+            
             self.bot.reply_to(message, 'Bot is active and listening')
-        
+
         @self.bot.message_handler(commands=['remind'])
-        def send_reminder(message):
-            # Pass
-            self.chat_id = message.chat.id
-            logging.info("Sending stored messages")
-            self.get_stored_messages()
+        def show_stored_messages(message):
+            '''
+            This function shows the messages stored
+            in the database
+            Parameters:
+            message (dictionary) : Message object returned by telegram
+
+            Return:
+            None
+            '''
+
+            # Send a confirmation that command was received
+            self.bot.reply_to(message, "Brb with your reminders..")
+
+            # Retrieve and send all the message
+            self.send_stored_messages(message.chat.id)
+        
+        @self.bot.message_handler(commands=['help'])
+        def help(message):
+            '''
+            This function shows help message
+            Parameters:
+            message (dictionary) : Message object returned by telegram
+            Return:
+            None
+            '''
+
+            # Send help message
+            self.send_help_message(message.chat.id)
+
         
         @self.bot.message_handler(commands=['show'])
-        def show_all_events(message):
+        def show_messages(message):
             '''
-            This function is shows all important messages
+            This function is used to test if bot is active
 
             Parameters:
             message (dictionary) : Message object returned by telegram
@@ -128,306 +194,480 @@ class TeleBot:
             Return:
             None
             '''
-            # Pass
-
-            self.chat_id = message.chat.id
-
-            # Debugging mutex status
-            self.mutex_status()
-
-            # Overcome race condition
-            cur = time.monotonic()
-
-            if cur - self.start > 120:
-                self.mutex = False
-
-            if self.mutex is False:
-                logging.info("Showing messages")
-
-                # Send a message to user
-                # Replace
-                self.bot.send_message(self.chat_id, "Brb with your tracked messages!")
-
-                # Lock the mutex
-                self.mutex = True
-                
-                # Track time variable
-                self.start = time.monotonic()
-
-                # Clear state
-                self.clear_state()
-
-                # Set chat id
-                # Replace
-                self.chat_id = message.chat.id
-                
-                # Retrive records
-                # Replace
-                select_query = "SELECT * FROM tracker where chat_id="+str(self.chat_id)+";"
-
-                connection = self.get_connection()
-
-                # Acquire cursor
-                cursor = connection.cursor()
-                
-                # Execute query
-                cursor.execute(select_query)
-                records = cursor.fetchall()
-
-                cursor.close()
-                connection.close()
-                
-                for row in records:
-                    #Populate tracker list
-
-                    item = self.get_tracker_item(row)
-                    #Decrypt message here
-                    self.tracker.append(item)
-
-                self.item_ptr = 0
-                self.show_one_event()
-
             
-            else:
-                self.bot.reply_to(message, 'Bot is currently busy, try again in a minute')
-            
+            self.bot.reply_to(message, 'Brb with your messages')
 
+            # Allocate a brick to chat
+            if message.chat.id not in self.bricks:
+
+                try:
+                    
+                    # Get tracked messages
+                    tracker = self.retrieve_tracker(message.chat.id)
+                    if len(tracker) == 0:
+                        self.bot.send_message(message.chat.id, "No imp messages were detected")
+                        raise ValueError("Tracker is empty")
+                    
+                    self.bricks[message.chat.id] = self.generate_brick()
+
+                    # Populate the brick with relevant data
+
+                    # Get the generator object
+                    gen_event = self.get_event_generator(tracker)
+                    self.bricks[message.chat.id]['gen_event'] = gen_event
+
+                    # List tracked events
+                    self.send_tracked_message(message.chat.id)
+
+                except ValueError as error:
+                    logging.info(error)
+                    #self.bot.send_message(message.chat.id, "No imp messages were detected")
+                
+                except Exception as error:
+                    logging.info(error)
+                
+
+        
         @self.bot.message_handler(func = lambda message : True)
         def track_messages(message):
-            
-            # Checking rasa server health
-
-            resp = requests.get(self.parser_url[:-11])
-            logging.info(resp.status_code)
-            if resp.status_code != 200:
-                self.bot.send_message(message.chat.id, "Argh,Server overloaded!! brb in 2 mins")
-                time.sleep(120)
 
             if message.reply_to_message is None:
                 if self.is_event_notification(message.text):
-                    event_type = self.extract_event(message.text)
-                    
+
+                    # Message is an event
+                    # Store it!
+
                     logging.info("Event detected")
-
-                    #Incase event not found
-                    if event_type is None:
-                        event_type = 'some event'
+                    self.store_message(message)
+            else:
+                # Message is possibly a reponse to bot
+                
+                
+                # Check if a brick has been allocated to this chat
+                # Note that a brick is only allocated when the bot
+                # Is interacting , and after interaction 
+                # The brick is destroyed
+                if message.chat.id in self.bricks:
                     
-                    connection = self.get_connection()
+                    # Check if reply is being given to correct query
+                    condition = message.reply_to_message.message_id == self.bricks[message.chat.id]['req_id']
 
-                    cursor = connection.cursor()
-                    
-                    try:
-                        if cursor:
-                            logging.info("Cursor opened")
+                    if condition :
                         
-                        
+                        # Retrieve the event being processed
+                        event = self.bricks[message.chat.id]['event']
 
-                            # Insert the message into postgres
-                            insert_query = """INSERT INTO tracker (chat_id, message, event_type) VALUES (%s,%s, %s);"""
-                            # Encrypt here
-                            record_to_insert = (message.chat.id, message.text, event_type)
+                        # Check what was the entity being requested
+                        entity = event.get_req_entity()
 
-                            cursor.execute(insert_query, record_to_insert)
+                        # There will be multiple tiers of information extraction
+                        # although no such extraction needed for desc
 
-                            #Commit the insert
-                            connection.commit()
-
-                            #Close the cursor
-                            cursor.close()
-                            connection.close()
-                            logging.info("Cursor closed")
+                        if entity == 'description':
+                            event.add_event_detail('description', message.text)
 
                         else:
-                            raise Exception('Cursor could not be opened')
+                            # 1) Use a NER
+                            body = json.dumps({'text':message.text})
 
-                    except (Exception, psycopg2.Error) as error:
-                            logging.info(error)                    
-                    
-            
+                            response = requests.post(self.parser_url, body)
+                            response = response.json()
 
-            elif message.reply_to_message.message_id == self.ent_req_id:
+                            # Check if NER is success using 
+                            # the flag below
+                            entity_extracted = False
 
-                logging.info("Form action in progress")
+                            for item in response['entities']:
+                                if item['entity'] == entity:
 
-                
+                                    if entity == 'date':
 
-                #Make request to backend
-                body = json.dumps({'text': message.text})
+                                        # Convert to datetime
+                                        date_format = '%d/%m/%y'
+                                        date_object = None
 
-                response = requests.post(self.parser_url, body)
+                                        # Try and ecxept the bug where NER returns days as date
+                                        try:
+                                            date_object = datetime.strptime(item['value'], date_format)
+                                            # Get date string
+                                            date_string = self.get_date_string(date_object)
+                                            event.add_event_detail(entity, date_string)
+                                            entity_extracted = True
+                                        except Exception as error:
+                                            logging.info(error)
+                                            
+                                    else:
+                                        event.add_event_detail(entity, item['value'])
+                                        entity_extracted = True
+                            
+                            if entity_extracted is False:
+                                # Use some more extractors
 
-                response = response.json()
-
-                if self.event_key == 'description':
-                    self.event.add_event_detail('description', message.text)
-                
-                elif len(response['entities']) > 0:
-                    for event in response['entities']:
-
-                        #Validate the value later
-                        self.event.add_event_detail(event['entity'], event['value'])
-                
-                
-                question = self.entity_to_request()
-                # Replace
-                sent_message = self.bot.send_message(self.chat_id, question, parse_mode="Markdown")
-
-                if self.event.is_details_complete() :
-                    try:
-                        self.bot.pin_chat_message(self.chat_id, sent_message.message_id)
-                    except Exception as error:
-                        logging.info(error)
-
-                self.ent_req_id = sent_message.message_id
-
-
-                if self.event.is_details_complete():
-                    if self.item_ptr < len(self.tracker)-1:
-                        self.item_ptr+=1
-                        self.show_one_event()
-                    
-                    elif self.item_ptr == (len(self.tracker)-1):
-                        self.release_bot()
+                                if entity == 'date':
+                                    date_object = self.extract_date(message.text)
+                                    if date_object is not None:
+                                        entity_extracted = True
+                                        date_string = self.get_date_string(date_object)
+                                        event.add_event_detail(entity, date_string)
+                                
+                                elif entity  == 'time':
+                                    time_string = self.extract_time(message.text)
+                                    if time_string is not None:
+                                        entity_extracted = True
+                                        event.add_event_detail(entity, time_string)
+                                
+                                # If it is still not being recognized
+                                if entity_extracted is False:
+                                    self.graceful_fail(message.chat.id)
+                                
                         
-          
+
+                        self.form_action(message.chat.id)
+                            
+
         while True:
             try:
                 self.bot.polling()
             except Exception:
-                time.sleep(15)
-
-    def get_stored_messages(self):
+                time.sleep(15) 
+    
+    def show_entity_menu(self, chat_id):
         '''
-        This function retrieves stored messages
+        This generates an entity menu for users to edit
+        '''
+
+        markup = self.entity_menu_markup()
+        message_id = self.bricks[chat_id]['menu_msg']['id']
+        text = self.bricks[chat_id]['menu_msg']['text']
+
+        self.bot.edit_message_text(chat_id=chat_id, message_id=message_id,text=text,
+                         reply_markup=markup, parse_mode="Markdown")
+
+    def graceful_fail(self, chat_id):
+        '''
+        This function handles unrecognised input
         Parameters:
-        None
+        chat_id (int): The chat ID of telegram channel
         Return:
         None
         '''
-        # Args
-        self.mutex = True
-        #Replace
-        self.bot.send_message(self.chat_id, "Brb with you stored messages!")
-        
-        try:
-            connection = self.get_connection()
-            cursor = connection.cursor()
-            # Replace
-            select_query = "SELECT * FROM events WHERE chat_id="+str(self.chat_id)
-            
-            cursor.execute(select_query)
+        logging.info("Reach graceful fail")
+        # Access the event currently being processed
+        # in this chat
+        event = self.bricks[chat_id]['event']
 
-            records = cursor.fetchall()
+        # Get the entity we are requesting
+        entity = event.get_req_entity()
+        logging.info("Entity is {}".format(entity))
+        # Generate a query
+        
+        text = ""
+        
+    
+        if entity == 'date':
+            text = "Couldn't understand the date \n" 
+            text += "Please enter in format *dd/mm/yy*"
+        
+        elif entity == 'time':
+            text = "Couldn't understand the time \n"
+            text += "Please enter in 24 hour format like *HH:MM*"
+        
+        self.bot.send_message(chat_id, text, parse_mode="Markdown")
+
+    def process_feedback(self, chat_id, feedback):
+        '''
+        This function processed feedback received from user
+        Parameters:
+        chat_id (int): Chat ID of telegram group
+        Return:
+        None
+        '''
+        
+        if feedback is False:
+            # Show the next event
+            self.send_tracked_message(chat_id)
+        
+        else:
+            logging.info("Positive feedback")
+
+            # Get the current event and create an event object 
+
+            item = self.bricks[chat_id]['cur_item']
+            event = Event(item['event_type'])
+
+            # Assign the event to the brick
+
+            self.bricks[chat_id]['event'] = event
+
+            # Now start the process of collecting information
+            self.form_action(chat_id)
+        
+    def form_action(self, chat_id):
+        '''
+        This function collects information of the event
+        Parameters:
+        chat_id : Chat ID of the telegram group
+        Return:
+        None
+        '''
+        logging.info("Form action invoked")
+        # The event object can be easily accessed 
+        # from the brick allocated to the chat
+
+        event = self.bricks[chat_id]['event']
+
+        if event.is_details_complete():
+
+            # Get event details 
+            event_details = event.get_event_details()
             
-            if len(records) == 0:
-                # Replace
-                self.bot.send_message(self.chat_id, "There were no stored messages")
+            # It is necessary to ask user
+            # for correctness of data
+            if event.are_details_valid():
+
+                
+                try:
+                    connection = self.get_connection()
+                    cursor = connection.cursor()
+
+                    # Storing the event to database
+                    insert_query = """INSERT INTO events (chat_id, type, description, date, time) VALUES (%s, %s, %s, %s, %s);"""
+
+                    # Encrypt details
+                    logging.info("Encrypting event details")
+                    
+                    event_details['description'] = self.goblin.encrypt(event_details['description'])
+                    event_details['event_type'] = self.goblin.encrypt(event_details['event_type'])
+
+                    record_to_insert = tuple([event_details[key] for key in event_details])
+                    record_to_insert = (chat_id, )+record_to_insert
+
+                    logging.info("Inserting into database")
+                    cursor.execute(insert_query, record_to_insert)
+
+                    # Commit
+                    connection.commit()
+
+                    cursor.close()
+                    connection.close()
+                    
+
+                except (Exception,psycopg2.Error) as error:
+                    logging.info(error)
+
+
+                text = "Reminder set sucessully"
+                self.bot.send_message(chat_id, text, parse_mode='Markdown')
+
+                # Clear the menu dictionary
+                self.bricks[chat_id]['menu_msg'].clear()
+
+                # Finally move onto next element
+                self.send_tracked_message(chat_id)
+
+            else:
+                # Ask user if he want to make any changes to the data
+                text = 'The details are \n'
+                for event_key in event_details:
+                    text+='\n '+'*'+event_key+'*'+' : '+event_details[event_key]
+                
+                markup = self.correctness_markup()
+
+                sent_message = self.bot.send_message(chat_id, text, reply_markup=markup, 
+                        parse_mode="Markdown")
+                
+                if self.bricks[chat_id]['menu_msg'] is None:
+                    self.bricks[chat_id]['menu_msg'] = {}
+                
+                # Note menu message details
+                self.bricks[chat_id]['menu_msg']['id']  = sent_message.message_id
+                self.bricks[chat_id]['menu_msg']['text'] = text
+
+        else:
+            # Else query additional details
+
+            query = ""
+
+            # but first check if prev request was completed
+            # to aid graceful failure
+
+            condition = event.is_prev_req_complete()
             
-            for row in records:
-                # Decrypt messages here
-                # Replace
-                text = row[2] + " on *"+row[4]+"* at *"+row[5]+"*\n"+"_"+row[3]+"_"
-                self.bot.send_message(self.chat_id,text,parse_mode="Markdown")
+            if condition:
+
+                # Get the detail left to be filled
+                entity = event.get_missing_detail()
+
+                # Formulate a query
+                query = "Please enter event "+entity
+            else:
+                # Entity is same from the previous
+                # incomplete query
+
+                entity = event.get_req_entity() 
+
+                # Request detail again
+                query = "Please event "+entity+" again one more time"
+
             
-            self.mutex = False
+            # This bot is restricted to sending queries
+            # The replies will be processed in the message handler
+
+            sent_message = self.bot.send_message(chat_id, query)
+
+            # Update the req_id
+            self.bricks[chat_id]['req_id'] = sent_message.message_id
+    
+    def send_tracked_message(self, chat_id):
+        '''
+        This functions sends messages being tracked
+        Parameters:
+        chat_id (int): The chat ID of telegram group
+        Return:
+        None
+        '''
+
+        logging.info("Sending a tracked message")
+        # A text will be generated in this function
+        # and this text will be sent as message
+        # Get the tracker item
+
+        text = ""
+
+        try:
+        
+            item = next(self.bricks[chat_id]['gen_event'])        
+                
+            # Store current item from tracker 
+            # This item will be used for further processing
+            self.bricks[chat_id]['cur_item'] = item
+            
+            # Extrapolate details from item 
+            # and send message
+            text = item['event_type']+" detected \n"
+            text += '_'+item['text']+'_'+' \n'
+            text += 'Set a reminder for this?'
+
+            sent_message = self.bot.send_message(chat_id, text, 
+                reply_markup=self.markup, 
+                parse_mode="Markdown")
+
+        except StopIteration:
+            # All tracked messages have been sent already
+
+            logging.info("Iteration Stopped")
+            
+            text = "You are all caught up :)"
+
+            sent_message = self.bot.send_message(chat_id, text, 
+                parse_mode="Markdown")
+
+            # Empty the tracker
+            try:
+                connection = self.get_connection()
+                cursor = connection.cursor()
+
+                delete_query = "DELETE FROM tracker where chat_id="+str(chat_id)+";"
+                
+                cursor.execute(delete_query)
+
+                # Commit changes
+                connection.commit()
+
+                cursor.close()
+                connection.close()
+
+            except (Exception, psycopg2.Error) as error:
+                # If exception occurs
+                logging.info(error)
+            
+            logging.info("Cleared tracked messages")
+
+            # Destroy the brick
+            # unless you want someone to DOS
+            # the shit out of the bot
+
+            del self.bricks[chat_id]
+
+            # well you can only dereference
+            # and garbage collector will deal with it
 
         except Exception as error:
             logging.info(error)
-
-
-    def mutex_status(self):
-        if self.mutex:
-            logging.info("CS Locked")
-        else:
-            logging.info("CS Open")
-
-    def get_connection(self):
-
-        try:
-            connection = psycopg2.connect(
-               os.environ['DATABASE_URL'],
-                sslmode = 'require'
-            )
-
-            return connection
-        
-        except (Exception, psycopg2.Error) as error:
-            logging.info(error)
-    
-    def process_feedback(self,positive):
+   
+    def store_message(self, message):
         '''
-        This function processes feedback given for events
-        Parameter:
-        positive (bool) : The feedback given by user
-        Return:
-        None
-        '''
-        # Args
-        logging.info("Processing feedback")
-        if positive is True:
-
-            logging.info("Feedback is positive")
-            #Create event object and start form action
-            self.event = Event(self.tracker[self.item_ptr]['event_type'])
-            
-            
-            question = self.entity_to_request()
-            # Replace
-            sent_message = self.bot.send_message(self.chat_id, question)
-
-            self.ent_req_id = sent_message.message_id
-
-        else:
-
-            logging.info("Feedback is negative")
-            # Update pointer and show another item
-
-            if self.item_ptr < len(self.tracker)-1:
-                logging.info("Events remaining")
-                self.item_ptr+=1
-                self.show_one_event()
-            
-            elif self.item_ptr == (len(self.tracker)-1):
-               self.release_bot()
-
-    def release_bot(self):
-        '''
-        This function sends the last message after tracker is emptied
+        This function stores a message in database
         Parameters:
-        None
+        chat_id (int): Chat ID of the telegram group
+        message (string): The message to be stored
         Return:
         None
         '''
-        #Args
-        # Clear the tracker
-        self.tracker = []
+        event_type = self.extract_event(message.text)
 
-        # Clear tracked messages
-        # Replace
-        delete_query = "DELETE FROM tracker where chat_id="+str(self.chat_id)+";"
+        if event_type is None:
+            event_type = 'Some event'
         
-        connection = self.get_connection()
+        
+        try: 
+            connection = self.get_connection()
+            cursor = connection.cursor()   
 
-        # Execute
-        cursor = connection.cursor()
-        try:
-            cursor.execute(delete_query)
+            # Insert the message into postgres
+            insert_query = """INSERT INTO tracker (chat_id, message, event_type) VALUES (%s,%s, %s);"""
+            # Encrypt here
+
+            message_text = self.goblin.encrypt(message.text)
+            if message_text is None:
+                raise Exception("Failed to encrypt")
+            logging.info("Message encrypted")
+            record_to_insert = (message.chat.id, message_text, event_type)
+            logging.info("Inserting event into database")
+            cursor.execute(insert_query, record_to_insert)
+
+            #Commit the insert
+            connection.commit()
+
+            #Close the cursor
+            cursor.close()
+            connection.close()
+            logging.info("Connection being closed")
+
         except (Exception, psycopg2.Error) as error:
-            logging.info(error)
+                logging.info(error)
+
+        finally:
+            if cursor:
+                cursor.close()
+
+            if connection:
+                connection.close()
+                        
+    def generate_brick(self):
+        '''
+        This function generates a dictionary 
+        '''
+
+        brick = {}
+
+        for key in ['event', 'req_id', 'gen_event', 'cur_item', 'menu_msg']:
+            brick[key] = None
         
-        # Commit changes
-        connection.commit()
-        cursor.close()
-        connection.close()
+        return brick
+    
+    def get_event_generator(self, tracker):
+        '''
+        This function is a generator which yields tracked messages
+        Parameters:
+        tracker (list) : List of messages being tracke
+        Return:
+        None
+        '''
 
-        logging.info("Cleared tracked messages")
-
-        #Release lock
-        self.mutex = False
-        #Replace
-        self.bot.send_message(self.chat_id, 'You are all caught up :)')
-
+        for item in tracker:
+            yield(item)
+                  
     def gen_markup(self):
         '''
         This function generates markup for inline keyboard
@@ -443,113 +683,121 @@ class TeleBot:
                     types.InlineKeyboardButton("No", callback_data="cb_no"))
         
         return markup
-    
-    def entity_to_request(self):
+
+    def correctness_markup(self):
         '''
-        This function finds out the entity to be collected in event object
+        This function generates markup for inline keyboard
         Parameters:
         None
         Return:
         None
         '''
-        # Args
-        event_key = self.event.get_missing_detail()
+        
+        logging.info("Markup being generated")
+        
+        markup = types.InlineKeyboardMarkup()
+        markup.row_width = 2
+        markup.add(types.InlineKeyboardButton("Set Reminder", callback_data="store"),
+                    types.InlineKeyboardButton("Dont set reminder", callback_data="storent"),
+                    types.InlineKeyboardButton("Edit some details", callback_data="edit"))
+        
+        return markup
 
+    def entity_menu_markup(self):
+        '''
+        This function generates markup for inline keyboard
+        Parameters:
+        None
+        Return:
+        None
+        '''
+        
+        logging.info("Markup being generated")
+        
+        markup = types.InlineKeyboardMarkup()
+        markup.row_width = 2
+        markup.add(types.InlineKeyboardButton("Edit date", callback_data="date"),
+                    types.InlineKeyboardButton("Edit Time", callback_data="time"),
+                    types.InlineKeyboardButton("Go back", callback_data="back"))
+        
+        return markup       
 
-        if event_key is not None:
-            question = 'Please enter event '+event_key
-            self.event_key = event_key
-        else:
-            event_details = self.event.get_event_details()
-            question = 'The details are \n'
-            for event_key in event_details:
-                question+='\n '+'*'+event_key+'*'+' : '+event_details[event_key]
-            question+='\n Stored sucessfully!'
+    def get_connection(self):
+        '''
+        This function return a connection to the database
+        Parameters:
+        None
+        Return:
+        None
+        '''
 
-            
+        try:
+            connection = psycopg2.connect(
+               os.environ['DATABASE_URL'],
+                sslmode = 'require'
+            )
+
+            return connection
+        
+        except (Exception, psycopg2.Error) as error:
+            logging.info(error)
+            return None
+    
+    def retrieve_tracker(self, chat_id):
+        '''
+        This function retrieves the tracked messages from database
+        Parameters:
+        chat_id (int) : Chat ID of telegram group
+        Return:
+        list : A list of tracked messages from database
+        '''
+
+        tracker = []
+
+        try:
             connection = self.get_connection()
             cursor = connection.cursor()
 
-            try:
-                
-                if cursor:
-                    logging.info("Cursor Opened")
-                
-                    # Storing the event to database
-                    insert_query = """INSERT INTO events (chat_id, type, description, date, time) VALUES (%s, %s, %s, %s, %s);"""
-                    # Encrypt messages
-                    # Replace
-                    record_to_insert = tuple([event_details[key] for key in event_details])
-                    record_to_insert = (self.chat_id, )+record_to_insert
+            select_query = "SELECT * FROM tracker WHERE chat_id="+str(chat_id)
+            logging.info("Querying from database")
+            cursor.execute(select_query)
 
+            records = cursor.fetchall()
 
-                    cursor.execute(insert_query, record_to_insert)
+            cursor.close()
+            connection.close()
 
-                    # Commit
-                    connection.commit()
-
-                else: 
-                    raise Exception("Cursor could not be opened")
             
-            except (Exception,psycopg2.Error) as error:
-                logging.info(error)
-
-            finally:
-                # Close the cursor
-                cursor.close()
-                connection.close()
-                logging.info("Cursor closed")
-        
-
-        return question
-
-    def clear_state(self):
-        '''
-        This function clears the state of bot
-        Parameters:
-        None
-        Return:
-        None
-        '''
-
-        print("State being wiped")
-
-        self.tracker = []
-        self.chat_id = None
-        self.fb_req_id = None
-        self.ent_req_id = None
-        self.item_ptr = None
-        self.event = None
+            for row in records:
+                item = self.get_tracker_item(row)
+                logging.info("HERE")
+                #Decrypt message here
+                item['text'] = self.goblin.decrypt(item['text'])
+                tracker.append(item)
     
+        except Exception as error:
+            logging.info(error)
         
-    def show_one_event(self):
-        '''
-        This function displays an event being tracked
+        finally:
+            return tracker
 
+    def get_tracker_item(self, row):
+        '''
+        This function generates the item stored in tracker
         Parameters:
-        None
+        message (string): The message to be processed
         Return:
-        None
+        dictionary: The item to be added to tracker
         '''
-        # Args
-        if (self.item_ptr < len(self.tracker)):
-            text = self.tracker[self.item_ptr]['event_type']+' detected \n'
-            text+= '_'+self.tracker[self.item_ptr]['text']+'_'+'\n'
 
-            text+='Store this?'
+        item = {
+            'id':row[0],
+            'chat_id':row[1],
+            'text':row[2],
+            'event_type':row[3]
+        }
 
-            # Replace
-            self.bot.send_message(self.chat_id, text,reply_markup=self.markup, parse_mode="Markdown")
-
-            # Tracking feedback request ID
-
-            #self.fb_req_id = sent_message.message_id
-
-        else:
-            self.bot.send_message(self.chat_id, 'No important messages were detected')
-            self.mutex = False
-
-
+        return item
 
     def extract_event(self, message_text):
         '''
@@ -563,13 +811,13 @@ class TeleBot:
         None
         '''
 
-        events = ['Meeting', 'Party', 'DA', 'Exam', 'Assignement']
+        events = ['Meeting', 'Party', 'DA', 'Exam', 'Assignement', 'Project']
 
         for event in events:
             if re.search(event, message_text, re.IGNORECASE):
                 return event
         return None
-    
+        
     def is_event_notification(self, message_text):
         '''
         This function checks if message is important or not
@@ -580,37 +828,169 @@ class TeleBot:
         '''
 
         logging.info('Event notification being checked')
-        #Make request to backend
-        body = json.dumps({"text":message_text})
 
-        response = requests.post(self.parser_url, body)
-        response = response.json()
+        # Get predictions from model
+        output = self.model.predict(message_text)
 
-        cond1 = float(response['intent']['confidence']) >= 0.8
-        cond2 = response['intent']['name'] == 'event_notification'
-        if cond1 and cond2:
-            return True
-            
-        
-        return False
-    
-    def get_tracker_item(self, row):
+        return (output[2]).tolist()[1] > 0.5
+
+    def extract_date(self, text):
         '''
-        This function adds a message to the conversation tracker
-
+        This function extracts date from the text
         Parameters:
-        message (dictionary) : The message object returned by telegram
-
-        Returns:
-        dictionary : The item to be added to tracker
+        text (string): User's reply which contains date
         '''
-      
-        item = {
-            'id': row[0],
-            'chat_id': row[1],
-            'text': row[2],
-            'event_type':row[3]
-        }
+        logging.info("Using date extractor")
+        # Assuming that there is only
+        # one date
 
-        return item
+        # First with datefinder
+        
+        match_generator = datefinder.find_dates(text)
+        date_object = None
+        
+        try:
+        
+            date_object = next(match_generator)
+            print(date_object)
+        
+        except StopIteration:
+        
+          
+            # Incase ppl forget how tomorrow is spelled
+            var_of_tmrw = ['tommorrow','tmrw','tomorrow','tomorow']
+            for word in text.split(' '):
+                if word in var_of_tmrw:
+                    text = "tomorrow"
 
+            # Try tsresolve
+            date_string = point_of_time(text)[0]
+
+            if date_string is not None:
+                
+                date_string = date_string.split('T')[0]
+
+                format = '%Y-%m-%d'
+
+                date_object = datetime.strptime(date_string, format)
+
+        finally:
+        
+            if date_object is None:
+                logging.info("Date couldn't be extracted")
+            return date_object
+
+    def extract_time(self, text):
+        '''
+        This function extracts time from the text
+        Parameters:
+        text (string): User's reply which contains time
+        '''
+        
+        # Parse date and time from string
+        date_string = point_of_time(text)[0]
+        
+        # If parsed successfully
+        if date_string is not None:
+            
+            # Get the time part from the string
+            date_string = date_string.split('T')[1]
+            
+            # Form a datetime object 
+            date_format =  '%H:%M:%S'
+            date_object = datetime.strptime(date_string, date_format)
+            
+            # If able to form the datetime object
+            # which should be always possible
+            if date_object is not None:
+                # Get hour and minute
+                clock = 'am'
+                hour = int(date_object.hour)
+                mins = int(date_object.minute)
+                
+                # Check whether am or pm
+                if hour>=12:
+                    clock = 'pm'
+                    
+                    # Convert hour to 12 hour format
+                    hour = hour-12 if hour != 12 else hour
+                
+                # Return time string
+                time_string = str(hour)+":"+str(mins)+clock
+                return time_string
+                
+                
+        return None
+
+
+    def send_stored_messages(self, chat_id):
+        '''
+        This function fetches stored messages from 
+        database and prints them
+        '''
+        try:
+            connection = self.get_connection()
+            cursor = connection.cursor()
+            
+            cur_date = self.get_date_string(datetime.now())
+            next_date = self.get_date_string(datetime.now() + timedelta(days=4)) 
+
+            select_query = "SELECT * FROM events WHERE chat_id="+str(chat_id)
+            select_query += " and date between '"+cur_date+"' and '"+next_date+"' ;"
+            
+            logging.info("Querying from database")
+            cursor.execute(select_query)
+
+            records = cursor.fetchall()
+            
+            if len(records) == 0:
+                self.bot.send_message(chat_id, "There were no reminders")
+            
+            else:
+            
+                for row in records:
+                    # Decrypt messages here
+                    event_type = self.goblin.decrypt(row[2])
+                    event_desc = self.goblin.decrypt(row[3])
+                    date_string = self.get_date_string(row[4])
+
+                    text = event_type + " on *"+date_string+"* at *"+row[5]+"*\n"+"_"+event_desc+"_"
+                    self.bot.send_message(chat_id,text,parse_mode="Markdown")
+
+                self.bot.send_message(chat_id, "You are all caught up :)")
+            
+            cursor.close()
+            connection.close()
+            logging.info("Connection closed")
+
+        except Exception as error:
+            logging.info(error)
+
+    def get_date_string(self, date_object):
+        '''
+        This function returns a string representation
+        of a datetime object
+        Parameters:
+        date_object (datetime): The date extracted from message
+        Return:
+        string : Date in form "dd/mm/yyyy"
+        '''
+
+        date_string = str(date_object.year) + '-'
+        date_string += str(date_object.month) + '-'
+        date_string += str(date_object.day)
+
+        return date_string
+
+    def send_help_message(self, chat_id):
+        '''
+        This function sends the help message
+        Parameters:
+        chat_id (int) : The Telegram group ID
+        Return:
+        None
+        '''
+        help_file = open("./utils/help_message.txt", "r", encoding='utf-8')
+        help_message = help_file.read()
+
+        self.bot.send_message(chat_id, help_message, parse_mode="HTML")
