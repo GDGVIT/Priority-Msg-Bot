@@ -305,6 +305,7 @@ class TeleBot:
                             #     # Use some more extractors
 
                             # Initially no entities have been extracted
+                            entity_extracted = False
 
                             if entity == 'date':
                                 date_object = self.extract_date(message.text)
@@ -315,6 +316,7 @@ class TeleBot:
                             
                             elif entity  == 'time':
                                 time_string = self.extract_time(message.text)
+                                print("Time string is {}".format(time_string))
                                 if time_string is not None:
                                     entity_extracted = True
                                     event.add_event_detail(entity, time_string)
@@ -503,6 +505,7 @@ class TeleBot:
 
                 # Formulate a query
                 query = "Please enter event "+entity
+                query += "\n reply directly to this message"
             else:
                 # Entity is same from the previous
                 # incomplete query
@@ -511,6 +514,7 @@ class TeleBot:
 
                 # Request detail again
                 query = "Please event "+entity+" again one more time"
+                query += "\n reply directly to this message"
 
             
             # This bot is restricted to sending queries
@@ -895,33 +899,42 @@ class TeleBot:
         
         # If parsed successfully
         if date_string is not None:
-            
-            # Get the time part from the string
-            date_string = date_string.split('T')[1]
-            
-            # Form a datetime object 
-            date_format =  '%H:%M:%S'
-            date_object = datetime.strptime(date_string, date_format)
-            
-            # If able to form the datetime object
-            # which should be always possible
-            if date_object is not None:
-                # Get hour and minute
-                clock = 'am'
-                hour = int(date_object.hour)
-                mins = int(date_object.minute)
+            try:
+                # Get the time part from the string
+                date_string = date_string.split('T')[1]
                 
-                # Check whether am or pm
-                if hour>=12:
-                    clock = 'pm'
+                # Form a datetime object 
+                date_format =  '%H:%M:%S'
+                date_object = datetime.strptime(date_string, date_format)
+                
+                # If able to form the datetime object
+                # which should be always possible
+                if date_object is not None:
+                    # Get hour and minute
+                    clock = 'am'
+                    hour = int(date_object.hour)
+                    mins = int(date_object.minute)
+
                     
-                    # Convert hour to 12 hour format
-                    hour = hour-12 if hour != 12 else hour
-                
-                # Return time string
-                time_string = str(hour)+":"+str(mins)+clock
-                return time_string
-                
+                    # Check whether am or pm
+                    if hour>=12:
+                        clock = 'pm'
+                        
+                        # Convert hour to 12 hour format
+                        hour = hour-12 if hour != 12 else hour
+                    
+                    else:
+                        hour = '0'+str(hour)
+
+                    # Convert time too
+                    if mins == 0:
+                        mins = '00'
+                    
+                    # Return time string
+                    time_string = str(hour)+":"+str(mins)+clock
+                    return time_string
+            except Exception as error:
+                logging.info(error)        
                 
         return None
 
