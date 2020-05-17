@@ -7,6 +7,7 @@ import logging
 import requests
 import psycopg2
 import datefinder
+from fastai.text import *
 from datetime import datetime
 from datetime import timedelta
 from tsresolve import point_of_time
