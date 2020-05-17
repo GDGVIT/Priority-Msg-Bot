@@ -68,21 +68,36 @@ This command makes the  bot list all the important events that will occur in the
 
 ## Screenshots of the bot
 
+### Sample Conversation
+
+<img src="images/chat.png" height="800" width="500"/>
+
 ### The /show command
 
-<img src="images/1.jpg" height="500" width="350"/>
+<img src="images/show1.png" height="600" width="500"/>
 
+<img src="images/show2.png" height="800" width="500"/>
+
+#### In case there are no important messages
+
+<img src="images/no msg.png" height="400" width="500"/>
 
 
 ### The tracked events can be stored by taking additional information
 
-<img src="images/2.jpg" height="500" width="350"/>
+<img src="images/remind1.png" height="800" width="500"/>
+
+### User have full control to edit details by interacting with bot
+
+<img src="images/edit1.png" height="300" width="500"/>
+
+<img src="images/edit2.png" height="800" width="500"/>
 
 
+### The reminders are automatically sent and also listed
 
-### The stored messages can be listed
 
-<img src="images/3.jpg" height="300" width="400"/>
+<img src="images/reminder.png" height="300" width="400"/>
 
 
 
