@@ -267,58 +267,60 @@ class TeleBot:
                             event.add_event_detail('description', message.text)
 
                         else:
-                            # 1) Use a NER
-                            body = json.dumps({'text':message.text})
+                            # # 1) Use a NER
+                            # body = json.dumps({'text':message.text})
 
-                            response = requests.post(self.parser_url, body)
-                            response = response.json()
+                            # response = requests.post(self.parser_url, body)
+                            # response = response.json()
 
-                            # Check if NER is success using 
-                            # the flag below
-                            entity_extracted = False
+                            # # Check if NER is success using 
+                            # # the flag below
+                            # entity_extracted = False
 
-                            for item in response['entities']:
-                                if item['entity'] == entity:
+                            # for item in response['entities']:
+                            #     if item['entity'] == entity:
 
-                                    if entity == 'date':
+                                    # if entity == 'date':
 
-                                        # Convert to datetime
-                                        date_format = '%d/%m/%y'
-                                        date_object = None
+                                    #     # Convert to datetime
+                                    #     date_format = '%d/%m/%y'
+                                    #     date_object = None
 
-                                        # Try and ecxept the bug where NER returns days as date
-                                        try:
-                                            date_object = datetime.strptime(item['value'], date_format)
-                                            # Get date string
-                                            date_string = self.get_date_string(date_object)
-                                            event.add_event_detail(entity, date_string)
-                                            entity_extracted = True
-                                        except Exception as error:
-                                            logging.info(error)
+                                    #     # Try and except the bug where NER returns days as date
+                                    #     try:
+                                    #         date_object = datetime.strptime(item['value'], date_format)
+                                    #         # Get date string
+                                    #         date_string = self.get_date_string(date_object)
+                                    #         event.add_event_detail(entity, date_string)
+                                    #         entity_extracted = True
+                                    #     except Exception as error:
+                                    #         logging.info(error)
                                             
-                                    else:
-                                        event.add_event_detail(entity, item['value'])
-                                        entity_extracted = True
+                                    # else:
+                                    #     event.add_event_detail(entity, item['value'])
+                                    #     entity_extracted = True
                             
-                            if entity_extracted is False:
-                                # Use some more extractors
+                            # if entity_extracted is False:
+                            #     # Use some more extractors
 
-                                if entity == 'date':
-                                    date_object = self.extract_date(message.text)
-                                    if date_object is not None:
-                                        entity_extracted = True
-                                        date_string = self.get_date_string(date_object)
-                                        event.add_event_detail(entity, date_string)
-                                
-                                elif entity  == 'time':
-                                    time_string = self.extract_time(message.text)
-                                    if time_string is not None:
-                                        entity_extracted = True
-                                        event.add_event_detail(entity, time_string)
-                                
-                                # If it is still not being recognized
-                                if entity_extracted is False:
-                                    self.graceful_fail(message.chat.id)
+                            # Initially no entities have been extracted
+
+                            if entity == 'date':
+                                date_object = self.extract_date(message.text)
+                                if date_object is not None:
+                                    entity_extracted = True
+                                    date_string = self.get_date_string(date_object)
+                                    event.add_event_detail(entity, date_string)
+                            
+                            elif entity  == 'time':
+                                time_string = self.extract_time(message.text)
+                                if time_string is not None:
+                                    entity_extracted = True
+                                    event.add_event_detail(entity, time_string)
+                            
+                            # If it is still not being recognized
+                            if entity_extracted is False:
+                                self.graceful_fail(message.chat.id)
                                 
                         
 
