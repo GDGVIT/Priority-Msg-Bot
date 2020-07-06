@@ -7,7 +7,7 @@ import logging
 import requests
 import psycopg2
 import datefinder
-from fastai.text import *
+import spacy
 from datetime import datetime
 from datetime import timedelta
 from tsresolve import point_of_time
@@ -22,7 +22,7 @@ class TeleBot:
     This is the class which initializes a telegram bot
     '''
 
-    def __init__(self, bot_token, model, encryption_key):
+    def __init__(self, bot_token,  encryption_key, nlp, textcat):
         '''
         The constructor for TeleBot class
 
@@ -38,7 +38,8 @@ class TeleBot:
         self.bot = telebot.TeleBot(token=bot_token, threaded=False)
 
         # Set the inference model
-        self.model = model        
+        self.nlp = nlp        
+        self.textcat = textcat
 
         # Initialize Goblin
         self.goblin = Goblin(bytes(encryption_key, encoding='utf-8'))
@@ -835,11 +836,14 @@ class TeleBot:
         '''
 
         logging.info('Event notification being checked')
+        doc = self.nlp(message_text)
+        cats = self.textcat(doc).cats
 
-        # Get predictions from model
-        output = self.model.predict(message_text)
+        if cats['POS'] > cats['NEG']:
+            return True
+        else:
+            return False
 
-        return (output[2]).tolist()[1] > 0.5
 
     def extract_date(self, text):
         '''
