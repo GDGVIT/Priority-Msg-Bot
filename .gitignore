@@ -11,3 +11,10 @@ src/.ipynb_checkpoints/
 src/bot/__pycache__/schedule.cpython-36.pyc
 src/reminder_bot/.env
 src/bot/models/export.pkl
+src/bot/models/classifier/cfg
+src/bot/models/classifier/model
+src/bot/models/classifier/vocab/key2row
+src/bot/models/classifier/vocab/lexemes.bin
+src/bot/models/classifier/vocab/lookups.bin
+src/bot/models/classifier/vocab/strings.json
+src/bot/models/classifier/vocab/vectors
