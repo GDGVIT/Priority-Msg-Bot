@@ -2,9 +2,8 @@ import os
 import time
 import requests
 import logging
-import torch
-import fastai
-from fastai.text import *
+import spacy
+from spacy.pipeline import TextCategorizer
 from dotenv import load_dotenv
 
 # Import utility classes
@@ -22,15 +21,24 @@ load_dotenv()
 
 bot_token = os.getenv('BOT_TOKEN')
 encryption_key = os.getenv('ENCRYPTION_KEY')
+# model = None
 
-model = None
+# os.environ['CUDA_VISIBLE_DEVICES'] =""
+# fastai.torch_core.default_device = torch.device('cpu')
+# defaults.device = torch.device('cpu')
+# print(fastai.torch_core.default_device)
+# model = load_learner('./models/')
 
-fastai.torch_core.default_device = torch.device('cpu')
-model = load_learner('./models/')
+# if model is not None:
+#     #Initializing instance of the bot
+#     argos = TeleBot(bot_token, model, encryption_key)
+#     argos.activate()
 
-if model is not None:
-    #Initializing instance of the bot
-    argos = TeleBot(bot_token, model, encryption_key)
+if __name__ == "__main__":
+    nlp = spacy.load('en_core_web_md')
+    textcat = TextCategorizer(nlp.vocab)
+    textcat.from_disk('./models/classifier')
+    argos = TeleBot(bot_token, encryption_key, nlp, textcat)
     argos.activate()
 else:
     exit()
