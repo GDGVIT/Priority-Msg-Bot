@@ -35,7 +35,7 @@ encryption_key = os.getenv('ENCRYPTION_KEY')
 #     argos.activate()
 
 if __name__ == "__main__":
-    nlp = spacy.load('en_core_web_md')
+    nlp = spacy.load('en_core_web_sm', disable=['tagger','ner'])
     textcat = TextCategorizer(nlp.vocab)
     textcat.from_disk('./models/classifier')
     argos = TeleBot(bot_token, encryption_key, nlp, textcat)
