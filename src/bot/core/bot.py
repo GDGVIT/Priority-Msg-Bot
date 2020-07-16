@@ -1099,7 +1099,7 @@ class TeleBot:
         Return:
         None
         '''
-        help_file = open("./utils/help_message.txt", "r", encoding='utf-8')
+        help_file = open("./core/help_message.txt", "r", encoding='utf-8')
         help_message = help_file.read()
 
         self.bot.send_message(chat_id, help_message, parse_mode="HTML")
