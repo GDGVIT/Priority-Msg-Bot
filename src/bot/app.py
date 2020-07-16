@@ -3,7 +3,7 @@ import time
 import requests
 import logging
 import spacy
-from spacy.pipeline import TextCategorizer
+import onnxruntime
 from dotenv import load_dotenv
 
 # Import utility classes
@@ -35,10 +35,11 @@ encryption_key = os.getenv('ENCRYPTION_KEY')
 #     argos.activate()
 
 if __name__ == "__main__":
-    nlp = spacy.load('en_core_web_sm', disable=['tagger','ner'])
-    textcat = TextCategorizer(nlp.vocab)
-    textcat.from_disk('./models/classifier')
-    argos = TeleBot(bot_token, encryption_key, nlp, textcat)
+    logging.info("Load Spacy model")
+    nlp = spacy.load('en_core_web_sm')
+    logging.info("Load onnx classifier")
+    model = onnxruntime.InferenceSession("./models/message_classifier-192A.onnx")
+    argos = TeleBot(bot_token, encryption_key, nlp, model)
     argos.activate()
 else:
     exit()
