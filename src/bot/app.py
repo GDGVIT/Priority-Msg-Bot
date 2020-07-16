@@ -1,6 +1,4 @@
 import os
-import time
-import requests
 import logging
 import spacy
 import onnxruntime
@@ -21,18 +19,6 @@ load_dotenv()
 
 bot_token = os.getenv('BOT_TOKEN')
 encryption_key = os.getenv('ENCRYPTION_KEY')
-# model = None
-
-# os.environ['CUDA_VISIBLE_DEVICES'] =""
-# fastai.torch_core.default_device = torch.device('cpu')
-# defaults.device = torch.device('cpu')
-# print(fastai.torch_core.default_device)
-# model = load_learner('./models/')
-
-# if model is not None:
-#     #Initializing instance of the bot
-#     argos = TeleBot(bot_token, model, encryption_key)
-#     argos.activate()
 
 if __name__ == "__main__":
     logging.info("Load Spacy model")

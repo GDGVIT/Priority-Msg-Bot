@@ -7,7 +7,6 @@ import logging
 import requests
 import psycopg2
 import datefinder
-import spacy
 import numpy as np
 import onnxruntime
 from datetime import datetime
@@ -855,7 +854,7 @@ class TeleBot:
             sent2vec = self.get_embedding(message_text)
             ort_inputs = {self.model.get_inputs()[0].name: sent2vec}
             ort_outs = self.model.run(None, ort_inputs)
-            logging.info(ort_outs)
+            logging.info("Confidence: {}".format(ort_outs[0][0]))
             if ort_outs[0][0]>0.8:
                 return True
             else:

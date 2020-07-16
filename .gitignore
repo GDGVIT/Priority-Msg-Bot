@@ -25,3 +25,4 @@ src/albert_classifier/__pycache__/model.cpython-36.pyc
 src/albert_classifier/states/message_classifier.onnx
 src/albert_classifier/states/weights.pt
 src/albert_classifier/train.py
+src/bot/core/__pycache__/bot.cpython-36.pyc
