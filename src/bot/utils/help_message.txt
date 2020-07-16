@@ -6,8 +6,7 @@ Please 🙏 read the description of how the bot works before proceeding
 
 <b>This bot can detect important messages</b>
 
-- Important messge like 
-<b>there is project review next week</b> or <b>we have to submit DA on friday</b> and keep a track of them
+- Important messages like <b>there is project review next week</b> or <b>we have to submit DA on friday</b> and keep a track of them
 
 <b>You can see these tracked messages</b>
 
@@ -16,9 +15,8 @@ messages that the bot detected.
 
 <b>You can set reminders</b>
 
-- when viewing the tracked messages using /show
-
-<b>You need to additionaly provide date and time of the reminder</b>
+<b>by informing the bot about it by giving it the date and time for reminders</b>
+Simple words like "next week" or "morning" can be used to inform the bot about date and time
 
 and our <b>Reminder Bot</b> will send a recurring reminder from 
 3 days before the deadline
