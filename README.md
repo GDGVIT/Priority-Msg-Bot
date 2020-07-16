@@ -61,12 +61,19 @@ This command makes the  bot list all the important events that will occur in the
 
 ## Screenshots of the bot
 
-<img src="images/A.png" height="600" width="400">
+### /show command
 
-<img src="images/B.png" height="600" width="400" >
+<img src="images/A.png" height="600" width="400" \>
 
+### Add description
+
+<img src="images/B.png" height="600" width="400" \>
+
+### Edit time
 
 <img src="images/C.png" height="600" width="400">
+
+### Edit date
 
 <img src="images/D.png" height="600" width="400">
 
