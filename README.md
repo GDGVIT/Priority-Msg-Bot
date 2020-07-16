@@ -64,23 +64,23 @@ This command makes the  bot list all the important events that will occur in the
 
 ### /show command
 
-<img src="images/A.png" height="600" width="400">
+<img src="images/A.png" height="600" width="400" alt="Show Command">
 
 ### Add description
 
-<img src="images/B.png" height="600" width="400">
+<img src="images/B.png" height="600" width="400" alt="Add description">
 
 ### Edit date
 
-<img src="images/D.png" height="600" width="400">
+<img src="images/D.png" height="600" width="400" alt="Edit date">
 
 ### Edit Time 
 
-<img src="images/E.png" height="600" width="400">
+<img src="images/E.png" height="600" width="400" alt="Edit Time">
 
 ### View reminder
 
-<img src="images/F.png" height="600" width="400">
+<img src="images/F.png" height="600" width="400" alt="View Reminder">
 
 
 ## Contributors
