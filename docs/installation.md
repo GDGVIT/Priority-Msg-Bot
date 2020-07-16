@@ -84,8 +84,6 @@ Refer to the .env file sample
 
 BOT_TOKEN = 'YOUR TELEGRAM BOT TOKEN'
 
-PARSER_URL = 'API ENDPOINT OF RASA SERVER'
-
 2. Run the Telegram bot script
 
 ```bash
