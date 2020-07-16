@@ -68,21 +68,19 @@ This command makes the  bot list all the important events that will occur in the
 
 ## Screenshots of the bot
 
-<img src="images/A.png" height="600" width="400" align="left"/>
+<img src="images/A.png" height="600" width="400">
 
-<img src="images/B.png" height="600" width="400" align="right"/>
+<img src="images/B.png" height="600" width="400" >
 
-<br><br>
 
-<img src="images/C.png" height="600" width="400" align="left"/>
+<img src="images/C.png" height="600" width="400">
 
-<img src="images/D.png" height="600" width="400" align="right"/>
+<img src="images/D.png" height="600" width="400">
 
-<br><br>
 
-<img src="images/E.png" height="600" width="400" align="left"/>
+<img src="images/E.png" height="600" width="400">
 
-<img src="images/F.png" height="600" width="400" align="right"/>
+<img src="images/F.png" height="600" width="400">
 
 
 ## Contributors
