@@ -394,7 +394,7 @@ class TeleBot:
 
             # Automaticall detect some data
             message = self.bricks[chat_id]['cur_item']['text']
-            print(message)
+            
             # Extract date using sPacy NER
             doc = self.nlp(message)
             ents = [token.text for token in doc.ents  if token.label_ == 'DATE' ]
@@ -476,7 +476,7 @@ class TeleBot:
                     logging.info(error)
 
 
-                text = "Reminder set sucessully"
+                text = "Reminder set sucessfully"
                 self.bot.send_message(chat_id, text, parse_mode='Markdown')
 
                 # Clear the menu dictionary
@@ -897,7 +897,7 @@ class TeleBot:
         try:
         
             date_object = next(match_generator)
-            print(date_object)
+           
         
         except StopIteration:
         
@@ -905,7 +905,7 @@ class TeleBot:
             # Incase ppl forget how tomorrow is spelled
             var_of_tmrw = ['tommorrow','tmrw','tomorrow','tomorow']
             for word in text.split(' '):
-                if word in var_of_tmrw:
+                if word.lower() in var_of_tmrw:
                     text = "tomorrow"
 
             # Try tsresolve
@@ -984,7 +984,6 @@ class TeleBot:
 
                 match = match1+match2
 
-                print(match)
                 if len(match) != 0:
                                        
                     time_string = self.strip_time(match[0].strip())
