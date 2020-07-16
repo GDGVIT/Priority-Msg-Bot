@@ -32,5 +32,4 @@ You can also check the upcoming events using **/remind**
 **What format should the date and time be in?**
 
 For dates you can use any format ranging from **dd/mm/yy** to saying **tmrw** ,**next week** or **this wednesday**
-
-However for time you have to mention **am** or **pm** as **9am** or **6 pm**.
+And for time you can use **6am** or **10:30 pm** or **18:00**
