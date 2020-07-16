@@ -16,8 +16,8 @@ from tsresolve import point_of_time
 from telebot import types
 
 # Import utility class
-from utils.event import Event
-from utils.goblin import Goblin
+from core.event import Event
+from core.goblin import Goblin
 
 class TeleBot: 
     '''
