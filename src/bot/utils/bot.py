@@ -933,8 +933,17 @@ class TeleBot:
         '''
 
         try:
+            
+            _day_pattern = r'am|pm|AM|PM'
+            match = re.search(_day_pattern, text)
+            
+            if match is not None:
+                _day = match.group()
+            else:
+                raise Exception("Day of time could not be detected")
+            
+            _time = re.sub(_day_pattern, "", text).strip()
 
-            _time, _day = text.split(' ')
             if _time.find(':') == -1:
                 t = time.strptime(_time,'%H')
             else:
@@ -965,14 +974,17 @@ class TeleBot:
 
         try:    
             
-                pattern1 = r'\s(\d{2}\:\d{2}\s?(?:AM|PM|am|pm))'
-                pattern2 = r'\s(\d{2}\s?(?:AM|PM|am|pm))'
+                pattern1 = r'\s(\d{1,2}\:\d{1,2}\s?(?:AM|PM|am|pm))'
+                pattern2 = r'\s(\d{1,2}\s?(?:AM|PM|am|pm))'
 
-                match1 = re.findall(pattern2, " "+text)
-                match2 = re.findall(pattern1, " "+text)
+                text = text.rjust(len(text)+1)
+
+                match1 = re.findall(pattern1, text)
+                match2 = re.findall(pattern2, text)
 
                 match = match1+match2
 
+                print(match)
                 if len(match) != 0:
                                        
                     time_string = self.strip_time(match[0].strip())
