@@ -35,6 +35,7 @@ Moreover you can also view the reminders using /remind
 
 ## Functionalities
 - [X]  Detect and track important messages
+- [X]  Auto detect date and time
 - [X]  List tracked messages on command
 - [X]  Add reminders for important events
 - [X]  Get reminders well in advance before deadlines
