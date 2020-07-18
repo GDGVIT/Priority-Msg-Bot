@@ -1,4 +1,4 @@
-Hi there 👋,  I am <b>Priority Message Bot</b> 
+Hi there 👋,  I am <b>Argos</b> 
 
 And I can help you make sure that you never miss an important message in your group chat
 
@@ -6,20 +6,17 @@ Please 🙏 read the description of how the bot works before proceeding
 
 <b>This bot can detect important messages</b>
 
-- The bot can detect any important messge like 
-<b>there is project review next week</b> or <b>we have to submit DA on friday</b> and keep a track of them
+- Important messages like <b>there is project review next week</b> or <b>we have to submit DA on friday</b> and keep a track of them
 
 <b>You can see these tracked messages</b>
 
-- Use the /show command to list all the important
+- Using the /show command which will list all the important
 messages that the bot detected. 
 
 <b>You can set reminders</b>
 
-- While viewing the tracked messages using /show
-the bot gives you the option to store the event
-
-<b>You need to additionaly provide date and time</b>
+<b>by informing the bot about it by giving it the date and time for reminders</b>
+Simple words like "next week" or "morning" can be used to inform the bot about date and time
 
 and our <b>Reminder Bot</b> will send a recurring reminder from 
 3 days before the deadline

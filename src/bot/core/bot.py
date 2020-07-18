@@ -7,21 +7,23 @@ import logging
 import requests
 import psycopg2
 import datefinder
+import numpy as np
+import onnxruntime
 from datetime import datetime
 from datetime import timedelta
 from tsresolve import point_of_time
 from telebot import types
 
 # Import utility class
-from utils.event import Event
-from utils.goblin import Goblin
+from core.event import Event
+from core.goblin import Goblin
 
 class TeleBot: 
     '''
     This is the class which initializes a telegram bot
     '''
 
-    def __init__(self, bot_token, parser_url, encryption_key):
+    def __init__(self, bot_token,  encryption_key, nlp, model):
         '''
         The constructor for TeleBot class
 
@@ -35,10 +37,10 @@ class TeleBot:
 
         # Initialize bot
         self.bot = telebot.TeleBot(token=bot_token, threaded=False)
-        
-        # Rasa API endpoint
-        self.parser_url = parser_url
-        logging.info("URL parser set : {}".format(self.parser_url))
+
+        # Set the inference model
+        self.nlp = nlp        
+        self.model = model
 
         # Initialize Goblin
         self.goblin = Goblin(bytes(encryption_key, encoding='utf-8'))
@@ -65,7 +67,10 @@ class TeleBot:
             logging.info("Callback triggered")
             
             if call.data == "cb_yes":
+                # Access the message
+  
                 self.process_feedback(call.message.chat.id, True)
+
             elif call.data == "cb_no":
                 #self.bot.answer_callback_query(call.id, "Answer is No")
                 self.process_feedback(call.message.chat.id, False)
@@ -75,6 +80,7 @@ class TeleBot:
                 try:
                     # Make details valid 
                     self.bricks[call.message.chat.id]['event'].make_valid()
+                    
 
                     # Then call form action
                     self.form_action(call.message.chat.id)
@@ -150,7 +156,12 @@ class TeleBot:
             None
             '''
             
-            self.bot.reply_to(message, 'Bot is active and listening')
+            try:
+
+                self.bot.reply_to(message, 'Bot is active and listening')
+
+            except Exception as error:
+                logging.info(repr(error))
 
         @self.bot.message_handler(commands=['remind'])
         def show_stored_messages(message):
@@ -164,12 +175,16 @@ class TeleBot:
             None
             '''
 
-            # Send a confirmation that command was received
-            self.bot.reply_to(message, "Brb with your reminders..")
+            try:
+                # Send a confirmation that command was received
+                self.bot.reply_to(message, "Brb with your reminders..")
 
-            # Retrieve and send all the message
-            self.send_stored_messages(message.chat.id)
-        
+                # Retrieve and send all the message
+                self.send_stored_messages(message.chat.id)
+
+            except Exception as error:
+                logging.info(repr(error))
+
         @self.bot.message_handler(commands=['help'])
         def help(message):
             '''
@@ -198,6 +213,11 @@ class TeleBot:
             
             self.bot.reply_to(message, 'Brb with your messages')
 
+            
+            # Remove previously allocated brick
+            if message.chat.id in self.bricks:
+                del self.bricks[message.chat.id]
+            
             # Allocate a brick to chat
             if message.chat.id not in self.bricks:
 
@@ -268,58 +288,27 @@ class TeleBot:
                             event.add_event_detail('description', message.text)
 
                         else:
-                            # 1) Use a NER
-                            body = json.dumps({'text':message.text})
-
-                            response = requests.post(self.parser_url, body)
-                            response = response.json()
-
-                            # Check if NER is success using 
-                            # the flag below
+                    
+                            # Initially no entities have been extracted
                             entity_extracted = False
 
-                            for item in response['entities']:
-                                if item['entity'] == entity:
-
-                                    if entity == 'date':
-
-                                        # Convert to datetime
-                                        date_format = '%d/%m/%y'
-                                        date_object = None
-
-                                        # Try and ecxept the bug where NER returns days as date
-                                        try:
-                                            date_object = datetime.strptime(item['value'], date_format)
-                                            # Get date string
-                                            date_string = self.get_date_string(date_object)
-                                            event.add_event_detail(entity, date_string)
-                                            entity_extracted = True
-                                        except Exception as error:
-                                            logging.info(error)
-                                            
-                                    else:
-                                        event.add_event_detail(entity, item['value'])
-                                        entity_extracted = True
+                            if entity == 'date':
+                                date_object = self.extract_date(message.text)
+                                if date_object is not None:
+                                    entity_extracted = True
+                                    date_string = self.get_date_string(date_object)
+                                    event.add_event_detail(entity, date_string)
                             
+                            elif entity  == 'time':
+                                time_string = self.extract_time(message.text)
+                                
+                                if time_string is not None:
+                                    entity_extracted = True
+                                    event.add_event_detail(entity, time_string)
+                            
+                            # If it is still not being recognized
                             if entity_extracted is False:
-                                # Use some more extractors
-
-                                if entity == 'date':
-                                    date_object = self.extract_date(message.text)
-                                    if date_object is not None:
-                                        entity_extracted = True
-                                        date_string = self.get_date_string(date_object)
-                                        event.add_event_detail(entity, date_string)
-                                
-                                elif entity  == 'time':
-                                    time_string = self.extract_time(message.text)
-                                    if time_string is not None:
-                                        entity_extracted = True
-                                        event.add_event_detail(entity, time_string)
-                                
-                                # If it is still not being recognized
-                                if entity_extracted is False:
-                                    self.graceful_fail(message.chat.id)
+                                self.graceful_fail(message.chat.id)
                                 
                         
 
@@ -400,6 +389,32 @@ class TeleBot:
 
             self.bricks[chat_id]['event'] = event
 
+            event = self.bricks[chat_id]['event']
+
+            # Automaticall detect some data
+            message = self.bricks[chat_id]['cur_item']['text']
+            
+            # Extract date using sPacy NER
+            doc = self.nlp(message)
+            ents = [token.text for token in doc.ents  if token.label_ == 'DATE' ]
+        
+            if len(ents)>0:
+                _date = ents[0]
+                date_object = self.extract_date(_date)
+                if date_object is not None:
+                    date_string = self.get_date_string(date_object)
+                    event.add_event_detail('date', date_string)
+                    logging.info("Auto detect date")
+            
+                # Extract time using regex
+                time_string = self.extract_time(message)
+
+                if time_string is not None:
+                    event.add_event_detail('time', time_string)
+                    logging.info("Auto detect time")
+
+
+
             # Now start the process of collecting information
             self.form_action(chat_id)
         
@@ -415,7 +430,10 @@ class TeleBot:
         # The event object can be easily accessed 
         # from the brick allocated to the chat
 
+
+
         event = self.bricks[chat_id]['event']
+
 
         if event.is_details_complete():
 
@@ -457,7 +475,7 @@ class TeleBot:
                     logging.info(error)
 
 
-                text = "Reminder set sucessully"
+                text = "Reminder set sucessfully"
                 self.bot.send_message(chat_id, text, parse_mode='Markdown')
 
                 # Clear the menu dictionary
@@ -485,6 +503,8 @@ class TeleBot:
                 self.bricks[chat_id]['menu_msg']['text'] = text
 
         else:
+
+
             # Else query additional details
 
             query = ""
@@ -501,6 +521,7 @@ class TeleBot:
 
                 # Formulate a query
                 query = "Please enter event "+entity
+                query += "\n reply directly to this message"
             else:
                 # Entity is same from the previous
                 # incomplete query
@@ -509,6 +530,7 @@ class TeleBot:
 
                 # Request detail again
                 query = "Please event "+entity+" again one more time"
+                query += "\n reply directly to this message"
 
             
             # This bot is restricted to sending queries
@@ -564,23 +586,21 @@ class TeleBot:
                 parse_mode="Markdown")
 
             # Empty the tracker
-            try:
-                connection = self.get_connection()
-                cursor = connection.cursor()
+            
+            connection = self.get_connection()
+            
+            cursor = connection.cursor()
+            
+            delete_query = "DELETE FROM tracker where chat_id= %s;"
+            
+            cursor.execute(delete_query, (str(chat_id),))
+           
+            # Commit changes
+            connection.commit()
+        
+            cursor.close()
+            connection.close()
 
-                delete_query = "DELETE FROM tracker where chat_id="+str(chat_id)+";"
-                
-                cursor.execute(delete_query)
-
-                # Commit changes
-                connection.commit()
-
-                cursor.close()
-                connection.close()
-
-            except (Exception, psycopg2.Error) as error:
-                # If exception occurs
-                logging.info(error)
             
             logging.info("Cleared tracked messages")
 
@@ -771,7 +791,6 @@ class TeleBot:
             
             for row in records:
                 item = self.get_tracker_item(row)
-                logging.info("HERE")
                 #Decrypt message here
                 item['text'] = self.goblin.decrypt(item['text'])
                 tracker.append(item)
@@ -812,7 +831,7 @@ class TeleBot:
         None
         '''
 
-        events = ['Meeting', 'Party', 'DA', 'Exam', 'Assignement', 'Project']
+        events = ['Meeting', 'Party', 'DA', 'Exam', 'Assignement', 'Project','Post']
 
         for event in events:
             if re.search(event, message_text, re.IGNORECASE):
@@ -828,17 +847,36 @@ class TeleBot:
         bool : True if message is important else False
         '''
 
-        logging.info('Event notification being checked')
-        #Make request to backend
-        body = json.dumps({"text":message_text})
+        try:
 
-        response = requests.post(self.parser_url, body)
-        response = response.json()
+            logging.info('Event notification being checked')
+            
+            sent2vec = self.get_embedding(message_text)
+            ort_inputs = {self.model.get_inputs()[0].name: sent2vec}
+            ort_outs = self.model.run(None, ort_inputs)
+            logging.info("Confidence: {}".format(ort_outs[0][0]))
+            if ort_outs[0][0]>0.8:
+                return True
+            else:
+                return False
+                
+        except Exception as error:
+            logging.info(repr(error))
+            return False
+    
+    def get_embedding(self, text):
+        """
+        Returns the custom embeddings for message classification
+        Parameters:
+        text (string): User's message
+        Return:
+        np.ndarray: 192 dimensional embeddings
+        """
 
-        cond1 = float(response['intent']['confidence']) >= 0.70
-        cond2 = response['intent']['name'] == 'event_notification'
-        if cond1 and cond2:
-            return True
+        doc = self.nlp(text)
+        word2vec = np.sum(np.array([token.vector for token in doc]),axis=0)/len(doc)
+        sent2vec = doc.vector
+        return np.concatenate([word2vec, sent2vec])
 
     def extract_date(self, text):
         '''
@@ -858,7 +896,7 @@ class TeleBot:
         try:
         
             date_object = next(match_generator)
-            print(date_object)
+           
         
         except StopIteration:
         
@@ -866,7 +904,7 @@ class TeleBot:
             # Incase ppl forget how tomorrow is spelled
             var_of_tmrw = ['tommorrow','tmrw','tomorrow','tomorow']
             for word in text.split(' '):
-                if word in var_of_tmrw:
+                if word.lower() in var_of_tmrw:
                     text = "tomorrow"
 
             # Try tsresolve
@@ -886,45 +924,110 @@ class TeleBot:
                 logging.info("Date couldn't be extracted")
             return date_object
 
+    def strip_time(self, text):
+        '''
+        This fuction trips time using time module
+        Parameters:
+        text (string): Where time is confirmed to be present 
+        '''
+
+        try:
+            
+            _day_pattern = r'am|pm|AM|PM'
+            match = re.search(_day_pattern, text)
+            
+            if match is not None:
+                _day = match.group()
+            else:
+                raise Exception("Day of time could not be detected")
+            
+            _time = re.sub(_day_pattern, "", text).strip()
+
+            if _time.find(':') == -1:
+                t = time.strptime(_time,'%H')
+            else:
+                t = time.strptime(_time, '%H:%M')
+
+            hour = str(t.tm_hour) if _day.lower() == 'am' else str(t.tm_hour+12) if t.tm_hour != 12 else "12"
+            mins = str(t.tm_min)
+
+            if len(mins) == 1:
+                mins = "0"+mins
+            if len(hour) == 1:
+                hour = "0"+hour
+            time_string = hour+":"+mins
+
+            return time_string
+        
+        except Exception as error:
+            logging.info(repr(error))
+
+    
+
     def extract_time(self, text):
         '''
         This function extracts time from the text
         Parameters:
         text (string): User's reply which contains time
         '''
-        
-        # Parse date and time from string
-        date_string = point_of_time(text)[0]
-        
-        # If parsed successfully
-        if date_string is not None:
+
+        try:    
             
-            # Get the time part from the string
-            date_string = date_string.split('T')[1]
-            
-            # Form a datetime object 
-            date_format =  '%H:%M:%S'
-            date_object = datetime.strptime(date_string, date_format)
-            
-            # If able to form the datetime object
-            # which should be always possible
-            if date_object is not None:
-                # Get hour and minute
-                clock = 'am'
-                hour = int(date_object.hour)
-                mins = int(date_object.minute)
-                
-                # Check whether am or pm
-                if hour>=12:
-                    clock = 'pm'
+                pattern1 = r'\s(\d{1,2}\:\d{1,2}\s?(?:AM|PM|am|pm))'
+                pattern2 = r'\s(\d{1,2}\s?(?:AM|PM|am|pm))'
+
+                text = text.rjust(len(text)+1)
+
+                match1 = re.findall(pattern1, text)
+                match2 = re.findall(pattern2, text)
+
+                match = match1+match2
+
+                if len(match) != 0:
+                                       
+                    time_string = self.strip_time(match[0].strip())
                     
-                    # Convert hour to 12 hour format
-                    hour = hour-12 if hour != 12 else hour
+                    return time_string
                 
-                # Return time string
-                time_string = str(hour)+":"+str(mins)+clock
-                return time_string
+                else:
+                    
+                    # Parse date and time from string
+                    date_string = point_of_time(text)[0]
+                    
+                    # If parsed successfully
+                    if date_string is not None:
+                        
+                        # Get the time part from the string
+                        date_string = date_string.split('T')[1]
+                        
+                        # Form a datetime object 
+                        date_format =  '%H:%M:%S'
+                        date_object = datetime.strptime(date_string, date_format)
+                        
+                        # If able to form the datetime object
+                        # which should be always possible
+                        if date_object is not None:
+                            # Get hour and minute
+                            # clock = 'am'
+                            hour = str(date_object.hour)
+                            mins = str(date_object.minute)
                 
+
+                            if len(mins) == 1:
+                                mins = "0"+mins
+
+                            if len(hour) == 1:
+                                hour = "0"+hour
+                            
+                            # Return time string
+                            time_string = hour+":"+mins
+                            
+
+                            return time_string  
+
+
+        except Exception as error:
+            logging.info(error)        
                 
         return None
 
@@ -996,7 +1099,7 @@ class TeleBot:
         Return:
         None
         '''
-        help_file = open("./utils/help_message.txt", "r", encoding='utf-8')
+        help_file = open("./core/help_message.txt", "r", encoding='utf-8')
         help_message = help_file.read()
 
         self.bot.send_message(chat_id, help_message, parse_mode="HTML")
