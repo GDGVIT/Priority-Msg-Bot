@@ -1,4 +1,4 @@
-cryptography==2.9
+cryptography==3.3.2
 requests==2.23.0
 pyTelegramBotAPI==3.6.7
 python-dotenv==0.13.0
